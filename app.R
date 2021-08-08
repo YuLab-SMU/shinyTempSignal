@@ -8,8 +8,7 @@ ui <- dashboardPage(skin = "blue",
                     dashboardSidebar(
                         useShinyjs(),
                         fileInput("file1","choose a tree",accept = "nwk"),
-                        sidebarMenu(menuItem("Tree",tabName = "tree"),
-                                    menuItem("Sample Dates",tabName = "Dates"),
+                        sidebarMenu(menuItem("Sample Dates",tabName = "Dates"),
                                     menuItem("Root-to-tip",tabName = "root")),
                         title="Choose a way to parse dates:",
                         checkboxInput("type1","Defined just by its order"),
@@ -26,29 +25,30 @@ ui <- dashboardPage(skin = "blue",
                     
                     dashboardBody(
                         tabItems(
-                            tabItem(tabName = "tree",
-                                    box(plotOutput("distplot"),width=8),
+                            tabItem(tabName = "Dates",
+                                    tableOutput("Sample")
+                            ),
+                            
+                            tabItem(tabName = "root",
+                                    box(plotOutput("distplot1"),width=8),
                                     box(width = 4,
-                                        sliderInput("height","height:",0,5000,500),
+                                        sliderInput("height","height:",0,5000,560),
                                         textInput("color3","color:",value = "black"),
                                         sliderInput("size","size:",0,10,1,step=0.1),
                                         checkboxInput("tip","tiplab:",TRUE),
                                         sliderInput("tipsize","tiplab_size:",0,10,3,step = 0.1),
-                                        textInput("color4","tiplab_color:","blue"))),
-                            tabItem(tabName = "Dates",
-                                    tableOutput("Sample")),
-                            
-                            tabItem(tabName = "root",
-                                    box(plotOutput("distPlot"),width=8),
+                                        textInput("color4","tiplab_color:","blue")),
+                                    mainPanel(textOutput("text1")),
+                                    box(plotOutput("distPlot2"),width=8),
                                     box(width=4,
                                         selectInput("method","method:",
                                                     c("rms","rsquared","correlation")),
                                         textInput("color1","point.color:",value = "red"),
                                         textInput("color2","line.color:",value = "blue")),
                                     tableOutput("Summary"))
-                            
-                        )))
-
+                        
+                        
+                    )))
 
 library(ggtree)
 library(ggplot2)
@@ -159,7 +159,6 @@ getdivergence<-function(tree,date,method)
     return(divergence)
 }
 
-# Define server logic required to draw a histogram
 server <- function(input, output) { 
     
     observeEvent(input$type1,{toggle("order1")
@@ -174,7 +173,7 @@ server <- function(input, output) {
         return(input$height)
     })
     
-    output$distplot <- renderPlot({      
+    output$distplot1 <- renderPlot({      
         inFile<-input$file1
         if(is.null(inFile))
             return(NULL)
@@ -186,7 +185,7 @@ server <- function(input, output) {
         print(p)
     },height=height)
     
-    output$distPlot <- renderPlot({
+    output$distPlot2 <- renderPlot({
         inFile<-input$file1
         if(is.null(inFile))
             return(NULL)
