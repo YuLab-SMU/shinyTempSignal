@@ -7,7 +7,7 @@ ui <- dashboardPage(skin = "blue",
                     
                     dashboardSidebar(
                         useShinyjs(),
-                        fileInput("file1","choose a tree",accept = "nwk"),
+                        fileInput("file1","choose a tree",accept = "nwk"), 
                         sidebarMenu(menuItem("Sample Dates",tabName = "Dates"),
                                     menuItem("Root-to-tip",tabName = "root")),
                         title="Choose a way to parse dates:",
@@ -38,7 +38,6 @@ ui <- dashboardPage(skin = "blue",
                                         checkboxInput("tip","tiplab:",TRUE),
                                         sliderInput("tipsize","tiplab_size:",0,10,3,step = 0.1),
                                         textInput("color4","tiplab_color:","blue")),
-                                    mainPanel(textOutput("text1")),
                                     box(plotOutput("distPlot2"),width=8),
                                     box(width=4,
                                         selectInput("method","method:",
@@ -47,8 +46,12 @@ ui <- dashboardPage(skin = "blue",
                                         textInput("color2","line.color:",value = "blue")),
                                     tableOutput("Summary"),
                                     checkboxGroupInput('dele_label',label='Select Your delete label:',choices = c(1))
-                            )))
-                        )
+                            ))
+                        
+                        
+                    )
+                    
+)
 
 
 
@@ -58,7 +61,7 @@ library(ggpubr)
 library(ape)
 library(stringr)
 
-date.type1<-function(tree,order)  
+date.type1<-function(tree,order) 
 {
     date = numeric(length(tree$tip.label))
     if(order=="last"){
@@ -109,7 +112,7 @@ date.type3<-function(tree,pattern)
     return(date)
 }
 
-date.numeric<-function(date,format)
+date.numeric<-function(date,format) 
 {
     if(format=="yy"|format=="yyyy"){
         date<-as.numeric(date)
@@ -154,7 +157,7 @@ getdivergence<-function(tree,date,method)
         {
             a<-edge[j]
             b<-edge[j+1]
-            len<-dataset[which(dataset$from==a & dataset$to==b),]$length 
+            len<-dataset[which(dataset$from==a & dataset$to==b),]$length  
             divergence[i,1]=divergence[i,1]+len
         }
     }
@@ -186,13 +189,18 @@ server <- function(input, output) {
         
     })
     
-    output$distplot1 <- renderPlot({    
+    treeda<-reactive({
         inFile<-input$file1
         if(is.null(inFile))
             return(NULL)
-        tree<-read.tree(inFile$datapath)
+        Tree<-read.tree(inFile$datapath)
         if(!is.null(input$dele_label)){
-            tree<-drop.tip(tree,input$dele_label)}
+            Tree<-drop.tip(Tree,input$dele_label)}
+        return(Tree)
+    })
+    
+    output$distplot1 <- renderPlot({   
+        tree<-treeda()
         p<-ggtree(tree,color=input$color3,size=input$size)
         if(input$tip){
             p<-p+geom_tiplab(size=input$tipsize,color=input$color4)
@@ -200,15 +208,8 @@ server <- function(input, output) {
         print(p)
     })
     
-    
-    
     output$distPlot2 <- renderPlot({
-        inFile<-input$file1
-        if(is.null(inFile))
-            return(NULL)
-        tree<-read.tree(inFile$datapath)
-        if(!is.null(input$dele_label)){
-            tree<-drop.tip(tree,input$dele_label)}
+        tree<-treeda()
         if(input$type1){
             date<-date.type1(tree,input$order1)
         }
@@ -227,12 +228,7 @@ server <- function(input, output) {
     
     
     output$Summary<-renderTable({  
-        inFile<-input$file1
-        if(is.null(inFile))
-            return(NULL)
-        tree<-read.tree(inFile$datapath)
-        if(!is.null(input$dele_label)){
-            tree<-drop.tip(tree,input$dele_label)}
+        tree<-treeda()
         date = numeric(length(tree$tip.label))
         if(input$type1){
             date<-date.type1(tree,input$order1)
@@ -242,18 +238,11 @@ server <- function(input, output) {
         }
         if(input$type3){
             date<-date.type3(input$REGEX)
-        }#
-        if(!is.null(input$dele_label)){
-            tree<-drop.tip(tree,input$dele_label)
-            date<-date.numeric(date,input$format)
-            divergence<-getdivergence(tree,date,input$method)
-            tree.data<-cbind(divergence,date)
         }
-        else{
-            date<-date.numeric(date,input$format)
-            divergence<-getdivergence(tree,date,input$method)
-            tree.data<-cbind(divergence,date)
-        }
+        date<-date.numeric(date,input$format)
+        divergence<-getdivergence(tree,date,input$method)
+        tree.data<-cbind(divergence,date)
+        
         if(input$format=="yy"|input$format=="yyyy"){
             range<-max(date)-min(date)
         }
