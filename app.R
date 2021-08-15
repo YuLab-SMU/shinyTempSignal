@@ -7,9 +7,8 @@ ui <- dashboardPage(skin = "blue",
                     
                     dashboardSidebar(
                         useShinyjs(),
-                        fileInput("file1","choose a tree",accept = "nwk"),
-                        sidebarMenu(menuItem("Tree",tabName = "tree"),
-                                    menuItem("Sample Dates",tabName = "Dates"),
+                        fileInput("file1","choose a tree",accept = "nwk"), 
+                        sidebarMenu(menuItem("Sample Dates",tabName = "Dates"),
                                     menuItem("Root-to-tip",tabName = "root")),
                         title="Choose a way to parse dates:",
                         checkboxInput("type1","Defined just by its order"),
@@ -26,28 +25,34 @@ ui <- dashboardPage(skin = "blue",
                     
                     dashboardBody(
                         tabItems(
-                            tabItem(tabName = "tree",
-                                    box(plotOutput("distplot"),width=8),
+                            tabItem(tabName = "Dates",
+                                    tableOutput("Sample")
+                            ),
+                            
+                            tabItem(tabName = "root",
+                                    box(plotOutput("distplot1"),width=8),
                                     box(width = 4,
-                                        sliderInput("height","height:",0,5000,500),
+                                        sliderInput("height","height:",0,5000,560),
                                         textInput("color3","color:",value = "black"),
                                         sliderInput("size","size:",0,10,1,step=0.1),
                                         checkboxInput("tip","tiplab:",TRUE),
                                         sliderInput("tipsize","tiplab_size:",0,10,3,step = 0.1),
-                                        textInput("color4","tiplab_color:","blue"))),
-                            tabItem(tabName = "Dates",
-                                    tableOutput("Sample")),
-                            
-                            tabItem(tabName = "root",
-                                    box(plotOutput("distPlot"),width=8),
+                                        textInput("color4","tiplab_color:","blue")),
+                                    box(plotOutput("distPlot2"),width=8),
                                     box(width=4,
                                         selectInput("method","method:",
                                                     c("rms","rsquared","correlation")),
                                         textInput("color1","point.color:",value = "red"),
                                         textInput("color2","line.color:",value = "blue")),
-                                    tableOutput("Summary"))
-                            
-                        )))
+                                    tableOutput("Summary"),
+                                    checkboxGroupInput('dele_label',label='Select Your delete label:',choices = c(1))
+                            ))
+                        
+                        
+                    )
+                    
+)
+
 
 
 library(ggtree)
@@ -56,7 +61,7 @@ library(ggpubr)
 library(ape)
 library(stringr)
 
-date.type1<-function(tree,order)
+date.type1<-function(tree,order) 
 {
     date = numeric(length(tree$tip.label))
     if(order=="last"){
@@ -65,7 +70,7 @@ date.type1<-function(tree,order)
             pos<-result[1]
             length<-attr(result,"match.length")-1
             time<-substr(tree$tip.label[i],pos,pos+length)
-            date[i]<-time
+            date[i]<-time 
         }}
     else{
         for (i in 1:length(tree$tip.label)){
@@ -107,7 +112,7 @@ date.type3<-function(tree,pattern)
     return(date)
 }
 
-date.numeric<-function(date,format)
+date.numeric<-function(date,format) 
 {
     if(format=="yy"|format=="yyyy"){
         date<-as.numeric(date)
@@ -152,14 +157,15 @@ getdivergence<-function(tree,date,method)
         {
             a<-edge[j]
             b<-edge[j+1]
-            len<-dataset[which(dataset$from==a & dataset$to==b),]$length
+            len<-dataset[which(dataset$from==a & dataset$to==b),]$length  
             divergence[i,1]=divergence[i,1]+len
         }
     }
     return(divergence)
 }
 
-# Define server logic required to draw a histogram
+
+
 server <- function(input, output) { 
     
     observeEvent(input$type1,{toggle("order1")
@@ -174,23 +180,36 @@ server <- function(input, output) {
         return(input$height)
     })
     
-    output$distplot <- renderPlot({      
+    observeEvent(input$file1,{
+        inFile<-input$file1
+        tree<-read.tree(inFile$datapath)
+        updateCheckboxGroupInput(inputId  = "dele_label",
+                                 choices  = tree$tip.label, 
+        )
+        
+    })
+    
+    treeda<-reactive({
         inFile<-input$file1
         if(is.null(inFile))
             return(NULL)
-        tree<-read.tree(inFile$datapath)
+        Tree<-read.tree(inFile$datapath)
+        if(!is.null(input$dele_label)){
+            Tree<-drop.tip(Tree,input$dele_label)}
+        return(Tree)
+    })
+    
+    output$distplot1 <- renderPlot({   
+        tree<-treeda()
         p<-ggtree(tree,color=input$color3,size=input$size)
         if(input$tip){
             p<-p+geom_tiplab(size=input$tipsize,color=input$color4)
         }
         print(p)
-    },height=height)
+    })
     
-    output$distPlot <- renderPlot({
-        inFile<-input$file1
-        if(is.null(inFile))
-            return(NULL)
-        tree<-read.tree(inFile$datapath)
+    output$distPlot2 <- renderPlot({
+        tree<-treeda()
         if(input$type1){
             date<-date.type1(tree,input$order1)
         }
@@ -202,18 +221,14 @@ server <- function(input, output) {
         }
         
         date<-date.numeric(date,input$format)
-        
         divergence<-getdivergence(tree,date,input$method)
         tree.data<-cbind(divergence,date)
         ggplot(data=tree.data, aes(x=date, y=divergence))+geom_point(color=input$color1)+geom_smooth(method="lm",se=FALSE,colour=input$color2)
-        
     })
     
-    output$Summary<-renderTable({
-        inFile<-input$file1
-        if(is.null(inFile))
-            return(NULL)
-        tree<-read.tree(inFile$datapath)
+    
+    output$Summary<-renderTable({  
+        tree<-treeda()
         date = numeric(length(tree$tip.label))
         if(input$type1){
             date<-date.type1(tree,input$order1)
@@ -235,7 +250,7 @@ server <- function(input, output) {
             range<-max(date)-min(date)
             range<-range*365
         }
-
+        
         summary<-data.frame(Dated.tips=c("Date range","Slope(rate)","X-Intercept","Correlation","R squared","RSE"),value=numeric(6))
         summary[1,2]<-range
         summary[4,2]<-as.numeric(cor(date,divergence))
@@ -249,11 +264,12 @@ server <- function(input, output) {
     digits = 5,width = 8)
     
     
-    output$Sample<-renderTable({
+    output$Sample<-renderTable({ 
         inFile<-input$file1
         if(is.null(inFile))
             return(NULL)
         tree<-read.tree(inFile$datapath)
+        
         if(input$type1){
             date<-date.type1(tree,input$order1)
         }
