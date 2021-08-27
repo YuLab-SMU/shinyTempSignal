@@ -16,6 +16,14 @@
 ## Dependencies ----
 ## Add one line by package you want to add as dependency
 usethis::use_package( "thinkr" )
+usethis::use_package( "Cairo" )
+usethis::use_package( "ape" )
+usethis::use_package( "ggplot2" )
+usethis::use_package( "ggpubr" )
+usethis::use_package( "ggtree" )
+usethis::use_package( "shinydashboard" )
+usethis::use_package( "shinyjs" )
+usethis::use_package( "stringr" )
 
 ## Add modules ----
 ## Create a module infrastructure in R/
