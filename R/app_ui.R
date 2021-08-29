@@ -7,6 +7,7 @@
 #' @import shinyjs
 #' @noRd
 app_ui <- function(request) {
+  tagList(
   dashboardPage(skin = "blue",##set blue background
                 dashboardHeader(title = "Temporal Signal"),
                 
@@ -65,7 +66,7 @@ app_ui <- function(request) {
                   
                 )
                 
-  )
+  ))
 }
 
 #' Add external Resources to the Application
