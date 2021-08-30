@@ -9,6 +9,7 @@ Imports:
     attempt,
     Cairo,
     config (>= 0.3.1),
+    conflicted,
     DT,
     ggplot2,
     ggpubr,

@@ -24,6 +24,8 @@ usethis::use_package( "ggtree" )
 usethis::use_package( "shinydashboard" )
 usethis::use_package( "shinyjs" )
 usethis::use_package( "stringr" )
+usethis::use_package( "conflicted" )
+
 
 ## Add modules ----
 ## Create a module infrastructure in R/
