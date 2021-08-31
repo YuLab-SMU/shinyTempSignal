@@ -5,10 +5,13 @@
 #' @import shiny
 #' @import ggtree
 #' @import ggplot2
-#' @import ggpubr
-#' @import ape
 #' @import stringr
 #' @import Cairo
+#' @import stats
+#' @importFrom shinyjs toggle
+#' @rawNamespace import(ggpubr, except = rotate)
+#' @rawNamespace import(ape, except = rotate)
+#' @importFrom ggtree rotate
 #' @noRd
 app_server <- function( input, output, session ) {
   # Your application server logic 
@@ -28,7 +31,7 @@ app_server <- function( input, output, session ) {
     inFile<-input$file1
     if(is.null(inFile))
       return(NULL)
-    tree<-read.tree(inFile$datapath)
+    tree<-ggtree::read.tree(inFile$datapath)
     return(tree)
   })
   
@@ -41,6 +44,8 @@ app_server <- function( input, output, session ) {
     divergence=c(),
     tip.label=c()
   )
+  
+  Group<-reactiveValues()
   
   tree_data<-reactive({
     tree_data<-data.frame(date=tree.data$date,divergence=tree.data$divergence)

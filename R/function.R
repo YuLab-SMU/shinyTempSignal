@@ -100,3 +100,4 @@ getdivergence<-function(tree,date,method)
   }
   return(divergence)
 }
+

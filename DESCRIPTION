@@ -3,12 +3,13 @@ Title: PKG_TITLE
 Version: 0.0.0.9000
 Authors@R: person('AUTHOR_FIRST', 'AUTHOR_LAST', email = 'AUTHOR@MAIL.COM', role = c('cre', 'aut'))
 Description: PKG_DESC.
-License: MIT + file LICENSE
+License: GPL-3
 Imports: 
     ape,
     attempt,
     Cairo,
     config (>= 0.3.1),
+    conflicted,
     DT,
     ggplot2,
     ggpubr,
