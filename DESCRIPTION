@@ -1,31 +1,30 @@
 Package: shinyTempSignal
-Title: PKG_TITLE
-Version: 0.0.0.9000
+Title: shinyTempSignal
+Version: 0.0.1
 Authors@R: person('AUTHOR_FIRST', 'AUTHOR_LAST', email = 'AUTHOR@MAIL.COM', role = c('cre', 'aut'))
 Description: PKG_DESC.
 License: GPL-3
 Imports: 
     ape,
-    attempt,
     Cairo,
     config (>= 0.3.1),
-    conflicted,
-    DT,
     ggplot2,
     ggpubr,
     ggtree,
-    glue,
     golem (>= 0.3.1),
-    htmltools,
-    processx,
     shiny (>= 1.6.0),
     shinydashboard,
     shinyjs,
-    stringr,
+    stringr
+Suggests:
+    attempt,
+    conflicted,
+    DT,
+    glue,
+    htmltools,
+    processx,
+    testthat (>= 3.0.0),
     thinkr
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.1.1
-Suggests: 
-    testthat (>= 3.0.0)
 Config/testthat/edition: 3
