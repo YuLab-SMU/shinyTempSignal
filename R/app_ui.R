@@ -55,7 +55,7 @@ app_ui <- function(request) {
                             box(width=4,
                                 selectInput("method","method:",
                                             c("rms","rsquared","correlation")),
-                                textInput("color1","point.color:",value = "red"),
+                                numericInput("pvalue","pvalue<:",value = "0.05"),
                                 textInput("color2","line.color:",value = "blue"),
                                 actionButton("exclude_toggle", "Toggle points"),
                                 actionButton("exclude_reset", "Reset"),
