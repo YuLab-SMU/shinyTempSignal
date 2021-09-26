@@ -31,21 +31,26 @@ app_server <- function( input, output, session ) {
     inFile<-input$file1
     if(is.null(inFile))
       return(NULL)
-    tree<-ggtree::read.tree(inFile$datapath)
+    tree<-read.tree(inFile$datapath)
     return(tree)
   })
   
   vals <- reactiveValues(
-    keeprows = rep(TRUE, 1)
+    keeprows = rep(TRUE, 1),
+    rightkeep=rep(TRUE,1),
+    upkeep=rep(TRUE,1)
   )
   
   tree.data<-reactiveValues(
     date=c(),
     divergence=c(),
-    tip.label=c()
+    tip.label=c(),
+    Uplabelname=c(),
+    dowmlabelname=c()
   )
   
   Group<-reactiveValues()
+  abnormal<-reactiveValues()
   
   tree_data<-reactive({
     tree_data<-data.frame(date=tree.data$date,divergence=tree.data$divergence)
@@ -82,17 +87,25 @@ app_server <- function( input, output, session ) {
   
   output$distplot1 <- renderPlot({    ##output tree plot by using ggtree
     tree<-treeda()
+    tree_data<-tree_data()
+    all   <- tree_data
+    all<-cbind(all,Group=vals$keeprows)
+    all<-cbind(label=row.names(all),all)
+    up   <- data.frame(label=tree.data$Uplabelname,abnormal=rep("up",length(tree.data$Uplabelname)))
+    dowm <- data.frame(label=tree.data$dowmlabelname,abnormal=rep("dowm",length(tree.data$dowmlabelname)))
+    d<-rbind(up,dowm)
+    dd<-merge(all,d,by="label",all= T)
     p<-ggtree(tree,color=input$color3,size=input$size)
+    p1<-p%<+%dd+geom_tippoint(aes(shape=abnormal),size=2.5,color="red")
     if(input$tip){
-      p1<-ggtree(tree,color=input$color3,size=input$size)+geom_tiplab(size=input$tipsize)
+      p2<-p1+geom_tiplab(size=input$tipsize)
       if(input$update_data){
-        tdf<-data.frame(Tiplabel=tree$tip.label,Group=vals$keeprows)
-        p1<-p%<+%tdf+geom_tiplab(size=input$tipsize,aes(col=Group))
+        p2<-p1+geom_tiplab(size=input$tipsize,aes(col=Group))
       }
-      print(p1)
+      print(p2)
     }
     else{
-      print(p)
+      print(p1)
     }
   },height=height)
   
@@ -108,7 +121,6 @@ app_server <- function( input, output, session ) {
     if(input$type3){
       date<-date.type3(tree,input$REGEX)
     }
-    
     date<-date.numeric(date,input$format)
     divergence<-getdivergence(tree,date,input$method)
     tree.data$date=date
@@ -117,9 +129,41 @@ app_server <- function( input, output, session ) {
     tree_data<-tree_data()
     keep    <- tree_data[ vals$keeprows, , drop = FALSE]
     exclude <- tree_data[!vals$keeprows, , drop = FALSE]
-    p<-ggplot(keep, aes(x=date,y=divergence)) + geom_point(color=input$color1) +
-      geom_text(aes(x=date, y=divergence, label = rownames(keep)))+
-      geom_point(data = exclude, shape = 21, fill = NA, color = "black", alpha = 0.25)+
+    m<-lm(divergence~date,tree_data)
+    rst<-rstudent(m)
+    UpValue<-tree_data[(0.5-abs(pt(rst,m$df.residual)-0.5))<input$pvalue/2&rst>0,]
+    downValue<-tree_data[(0.5-abs(pt(rst,m$df.residual)-0.5))<input$pvalue/2&rst<0,]
+    tree.data$Uplabelname<-row.names(UpValue)
+    tree.data$dowmlabelname<-row.names(downValue)
+    for (i in 1:(length(keep$date))) {
+      if(keep$date[i]%in%UpValue$date||keep$date[i]%in%downValue$date)
+      {
+        vals$rightkeep[i]<-FALSE
+        if(keep$date[i]%in%UpValue$date){
+          vals$upkeep[i]<-TRUE
+          vals$downkeep[i]<-FALSE
+        }
+        else{
+          vals$upkeep[i]<-FALSE
+          vals$downkeep[i]<-TRUE
+        }
+      }
+      else{
+        vals$rightkeep[i]<-TRUE
+        vals$upkeep[i]<-FALSE
+        vals$downkeep[i]<-FALSE
+      }
+    }
+    Fupkeep   <-keep[ vals$upkeep, , drop = FALSE]
+    Fdownkeep <-keep[ vals$downkeep, , drop = FALSE]
+    Tkeep     <- keep[ vals$rightkeep, , drop = FALSE]
+    p<-ggplot(Tkeep, aes(x=date,y=divergence)) + geom_point(color="black") +
+      geom_text(aes(x=date, y=divergence, label = rownames(Tkeep)))+
+      geom_point(data = Fupkeep, color = "red")+
+      geom_text(data=Fupkeep,aes(x=date, y=divergence, label = rownames(Fupkeep)))+
+      geom_point(data = Fdownkeep, color = "blue")+
+      geom_text(data=Fdownkeep,aes(x=date, y=divergence, label = rownames(Fdownkeep)))+
+      geom_point(data = exclude, color = "black", alpha = 0.25)+
       geom_text(data=exclude,aes(x=date, y=divergence, label = rownames(exclude)),alpha=0.25)
     if(input$update_data)
     {
