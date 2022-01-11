@@ -7,11 +7,18 @@
 #' @import ggplot2
 #' @import stringr
 #' @import Cairo
-#' @import stats
 #' @importFrom shinyjs toggle
 #' @rawNamespace import(ggpubr, except = rotate)
 #' @rawNamespace import(ape, except = rotate)
 #' @importFrom ggtree rotate
+#' @importFrom TSA runs
+#' @importFrom stats acf
+#' @importFrom stats cor
+#' @importFrom stats lm
+#' @importFrom stats qqnorm
+#' @importFrom stats rstudent
+#' @importFrom stats pt
+#' @importFrom stats shapiro.test
 #' @noRd
 app_server <- function( input, output, session ) {
   # Your application server logic 
@@ -176,6 +183,41 @@ app_server <- function( input, output, session ) {
     return(p2)
   })
   
+  output$distPlot3 <- renderPlot({
+    tree_data<-tree_data()
+    keep    <- tree_data[ vals$keeprows, , drop = FALSE]
+    x<-keep$date
+    y<-keep$divergence
+    print(x)
+    print(y)
+    lm3<-lm(y~x)
+    residuals_3<-rstudent(lm3)
+    p3 <- plot(y=residuals_3,x=x,type="l",xlab = "time",ylab = "residuals")+graphics::points(y=residuals_3,x=x,col="blue")
+    return(p3)
+  })
+  output$distPlot4 <- renderPlot({
+    tree_data<-tree_data()
+    keep    <- tree_data[ vals$keeprows, , drop = FALSE]
+    x<-keep$date
+    y<-keep$divergence
+    print(x)
+    print(y)
+    lm4<-lm(y~x)
+    residuals_4<-rstudent(lm4)
+    p4<-acf(residuals_4)
+    print(p4)
+  })
+  output$distPlot5 <- renderPlot({
+    tree_data<-tree_data()
+    keep    <- tree_data[ vals$keeprows, , drop = FALSE]
+    x<-keep$date
+    y<-keep$divergence
+    print(x)
+    print(y)
+    lm5<-lm(y~x)
+    residuals_5<-rstudent(lm5)
+    return(qqnorm(residuals_5))
+  })
   
   output$Summary<-renderTable({  
     tree<-treeda()
@@ -211,7 +253,7 @@ app_server <- function( input, output, session ) {
       range<-range*365
     }
     ##make a summary and output
-    summary<-data.frame(Dated.tips=c("Date range","Slope(rate)","X-Intercept","Correlation","R squared","RSE"),value=numeric(6))
+    summary<-data.frame(Dated.tips=c("Date range","Slope(rate)","X-Intercept","Correlation","R squared","RSE","Shapiro-test","Runs-test"),value=numeric(8))
     summary[1,2]<-range
     summary[4,2]<-as.numeric(cor(date,divergence))
     lm.rtt<-lm(df)
@@ -219,6 +261,8 @@ app_server <- function( input, output, session ) {
     summary[3,2]<-as.numeric(abs(lm.rtt$coefficients[1]))/as.numeric(lm.rtt$coefficients[2])
     summary[5,2]<-summary(lm.rtt)$r.squared
     summary[6,2]<-summary(lm.rtt)[["sigma"]]
+    summary[7,2]<-shapiro.test(rstudent(lm(df)))
+    summary[8,2]<-TSA::runs(rstudent(lm(df)))
     print(summary)
   },
   digits = 5,width = 8)

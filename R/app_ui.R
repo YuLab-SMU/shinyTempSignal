@@ -51,6 +51,7 @@ app_ui <- function(request) {
                                                 id = "plot2_brush"
                                               )
                                    ),
+                                   box(plotOutput("distPlot3",height = 500),width=10),
                             ),
                             box(width=4,
                                 selectInput("method","method:",
