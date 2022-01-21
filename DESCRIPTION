@@ -6,8 +6,10 @@ Description: PKG_DESC.
 License: GPL-3
 Imports: 
     ape,
+    aTSA,
     Cairo,
     config (>= 0.3.1),
+    forecast,
     ggplot2,
     ggpubr,
     ggtree,

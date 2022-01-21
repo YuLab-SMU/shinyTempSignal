@@ -12,6 +12,8 @@
 #' @rawNamespace import(ape, except = rotate)
 #' @importFrom ggtree rotate
 #' @importFrom TSA runs
+#' @importFrom forecast forecast
+#' @importFrom aTSA adf.test
 #' @importFrom stats acf
 #' @importFrom stats cor
 #' @importFrom stats lm
@@ -19,6 +21,7 @@
 #' @importFrom stats rstudent
 #' @importFrom stats pt
 #' @importFrom stats shapiro.test
+#' @importFrom stats ts
 #' @noRd
 app_server <- function( input, output, session ) {
   # Your application server logic 
@@ -216,7 +219,38 @@ app_server <- function( input, output, session ) {
     residuals_5 <- rstudent(lm5)
     return(qqnorm(residuals_5))
   })
-  
+  output$distPlot6 <- renderPlot({
+    tree_data <- tree_data()
+    keep <- tree_data[vals$keeprows, , drop = FALSE]
+    x <- keep$date
+    y <- keep$divergence
+    fra <- data.frame(time=x,div=y)
+    fra <- fra[order(fra$time),]
+    x <- fra$time
+    y <- fra$div
+    lm6 <- lm(y~x)
+    residuals <- rstudent(lm6)
+    dwelling <- ts(residuals)
+    adf<-adf.test(dwelling,nlag = 2)
+    adf_p_value <- min(adf$type1[1,3], adf$type1[2,3], adf$type2[1,3], 
+                       adf$type2[2,3], adf$type3[1,3], adf$type3[2,3])
+    fit <- stats::arima(dwelling, order=c(1, 0, 0))
+    fore <- forecast::forecast(fit,  h=5)
+    fore1 <- as.data.frame(fore)
+    fore2 <- as.data.frame(fore$fitted)
+    stringadf<-paste("time  ", "(", "ADF p_value:",adf_p_value, ")")
+    p <- ggplot(fore1,
+                aes(x=as.numeric(row.names(fore1)), y=fore1$"Point Forecast"))+ 
+      labs(x=stringadf,y="residuals")+ geom_point(color="blue")+ 
+      geom_smooth(data=fore1, aes(x=as.numeric(row.names(fore1), 
+                                               y=fore1$"Point Forecast")), 
+                  se=FALSE, colour="blue")+
+      geom_smooth(data=dwelling,
+                  aes(x=x, y=residuals), se=FALSE, colour="black")+
+      geom_smooth(data=fore2, 
+                  aes(x=as.numeric(row.names(fore2)), y=x), se=FALSE)
+    print(p)
+  })
   output$Summary <- renderTable({  
     tree <- treeda()
     if (input$update_data) {
