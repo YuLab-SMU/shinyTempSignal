@@ -25,7 +25,8 @@ usethis::use_package( "shinydashboard" )
 usethis::use_package( "shinyjs" )
 usethis::use_package( "stringr" )
 usethis::use_package( "TSA" )
-
+usethis::use_package( "aTSA" )
+usethis::use_package( "forecast" )
 
 ## Add modules ----
 ## Create a module infrastructure in R/

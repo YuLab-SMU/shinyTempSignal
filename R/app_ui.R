@@ -81,6 +81,8 @@ app_ui <- function(request) {
                               tableOutput("Summary"),
                               box(plotOutput("distPlot4"), width=4),
                               box(plotOutput("distPlot5"), width=4),
+                              box(plotOutput("distPlot6", 
+                                             height=500), width=10),
                       )
                     )
                   )
