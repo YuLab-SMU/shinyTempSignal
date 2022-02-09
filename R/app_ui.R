@@ -83,6 +83,10 @@ app_ui <- function(request) {
                               box(plotOutput("distPlot5"), width=4),
                               box(plotOutput("distPlot6", 
                                              height=500), width=10),
+                              selectInput("fmethod", "method:", 
+                                          c("ETS", "ARIMA")),
+                              textInput("hstep", 
+                                        "h:", value="1"),
                       )
                     )
                   )

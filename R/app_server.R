@@ -231,24 +231,20 @@ app_server <- function( input, output, session ) {
     lm6 <- lm(y~x)
     residuals <- rstudent(lm6)
     dwelling <- ts(residuals)
-    adf<-adf.test(dwelling,nlag = 2)
-    adf_p_value <- min(adf$type1[1,3], adf$type1[2,3], adf$type2[1,3], 
-                       adf$type2[2,3], adf$type3[1,3], adf$type3[2,3])
-    fit <- stats::arima(dwelling, order=c(1, 0, 0))
-    fore <- forecast::forecast(fit,  h=5)
-    fore1 <- as.data.frame(fore)
-    fore2 <- as.data.frame(fore$fitted)
-    stringadf<-paste("time  ", "(", "ADF p_value:",adf_p_value, ")")
-    p <- ggplot(fore1,
-                aes(x=as.numeric(row.names(fore1)), y=fore1$"Point Forecast"))+ 
-      labs(x=stringadf,y="residuals")+ geom_point(color="blue")+ 
-      geom_smooth(data=fore1, aes(x=as.numeric(row.names(fore1), 
-                                               y=fore1$"Point Forecast")), 
-                  se=FALSE, colour="blue")+
-      geom_smooth(data=dwelling,
-                  aes(x=x, y=residuals), se=FALSE, colour="black")+
-      geom_smooth(data=fore2, 
-                  aes(x=as.numeric(row.names(fore2)), y=x), se=FALSE)
+    print(dwelling)
+    if (input$fmethod == "ARIMA") {
+      p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
+        as.numeric(input$hstep)) %>% autoplot(
+          xlab = "Year", ylab = "residuals"
+        )
+    }
+    if (input$fmethod == "ETS") {
+      
+      p<- dwelling %>% forecast::ets() %>% forecast::forecast(
+        as.numeric(input$hstep)) %>% autoplot(
+          xlab = "Year", ylab = "residuals"
+        )
+    }
     print(p)
   })
   output$Summary <- renderTable({  
