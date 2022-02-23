@@ -224,14 +224,29 @@ app_server <- function( input, output, session ) {
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
     y <- keep$divergence
-    fra <- data.frame(time=x,div=y)
+    fra <- data.frame(time=x,res=y)
+    #为丢失的年份设定缺失值
+    for (i in min(x):max(x)) {
+      if(!i%in%fra$time){
+        addfra <- data.frame(time=i, res=NA)
+        fra <- rbind(fra, addfra)
+      }
+    }
     fra <- fra[order(fra$time),]
     x <- fra$time
-    y <- fra$div
+    y <- fra$res
     lm6 <- lm(y~x)
-    residuals <- rstudent(lm6)
-    dwelling <- ts(residuals)
-    print(dwelling)
+    rsdata <- rstudent(lm6)
+    j <- 1
+    for (i in 1:length(x)) {
+      if(!is.na(fra$res[i])){
+        fra$res[i] <- rsdata[j]
+        j <- j+1
+      }
+    }
+    dwelling <- ts(fra$res, start=min(x))
+    #填补缺失值
+    dwelling <- forecast::na.interp(dwelling)
     if (input$fmethod == "ARIMA") {
       p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
         as.numeric(input$hstep)) %>% autoplot(
@@ -239,7 +254,6 @@ app_server <- function( input, output, session ) {
         )
     }
     if (input$fmethod == "ETS") {
-      
       p<- dwelling %>% forecast::ets() %>% forecast::forecast(
         as.numeric(input$hstep)) %>% autoplot(
           xlab = "Year", ylab = "residuals"
