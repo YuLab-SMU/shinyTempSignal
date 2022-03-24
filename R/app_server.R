@@ -11,6 +11,10 @@
 #' @rawNamespace import(ggpubr, except = rotate)
 #' @rawNamespace import(ape, except = rotate)
 #' @importFrom ggtree rotate
+#' @importFrom treeio read.beast
+#' @importFrom treeio read.codeml
+#' @importFrom treeio merge_tree
+#' @importFrom treeio rescale_tree
 #' @importFrom TSA runs
 #' @importFrom forecast forecast
 #' @importFrom aTSA adf.test
@@ -39,10 +43,23 @@ app_server <- function( input, output, session ) {
   
   treeda <- reactive({
     inFile <- input$file1
-    if (is.null(inFile))  
-      return(NULL)
-    tree <- read.tree(inFile$datapath)
-    return(tree)
+    beast_file <- input$file2
+    mlc_file <- input$file3
+    rst_file <- input$file4
+    if (!is.null(inFile)){
+      tree <- read.tree(inFile$datapath)
+      return(tree)
+    }
+    if (input$fileinput==1){
+      beast_tree <- read.beast(beast_file$datapath)
+      codeml_tree <- read.codeml(rst_file$datapath, mlc_file$datapath)
+      merged_tree <- merge_tree(beast_tree, codeml_tree)
+      tree<-fortify(merged_tree)
+      treea1 <- rescale_tree(merged_tree, input$distance)
+      treea2 <- treea1@phylo
+      return(treea2)
+    }
+    return(NULL)
   })
   
   vals <- reactiveValues(
@@ -71,6 +88,11 @@ app_server <- function( input, output, session ) {
     tree <- treeda()
     vals$keeprows <- rep(TRUE, length(tree$tip.label))
   })
+  
+  observeEvent(input$fileinput, {
+    tree <- treeda()
+    vals$keeprows <- rep(TRUE, length(tree$tip.label))
+  }) 
   
   observeEvent(input$plot2_click, {
     tree_data <- tree_data()
@@ -145,10 +167,11 @@ app_server <- function( input, output, session ) {
                            < input$pvalue / 2 & rst < 0, ]
     treeData$up_labelname <- row.names(upvalue)
     treeData$down_labelname <- row.names(downvalue)
-    for (i in 1:(length(keep$date))) {
-      if (keep$date[i] %in% upvalue$date || keep$date[i] %in% downvalue$date) {
+    for (i in 1:(length(keep$divergence))) {
+      if (keep$divergence[i] %in% upvalue$divergence 
+          || keep$divergence[i] %in% downvalue$divergence) {
         vals$rightkeep[i] <- FALSE
-        if (keep$date[i] %in% upvalue$date) {
+        if (keep$divergence[i] %in% upvalue$divergence) {
           vals$upkeep[i] <- TRUE
           vals$downkeep[i] <- FALSE
         }
@@ -168,16 +191,18 @@ app_server <- function( input, output, session ) {
     true_keep     <- keep[vals$rightkeep, , drop = FALSE]
     p <- ggplot(true_keep,
                 aes(x=date, y=divergence)) + geom_point(color="black") +
-      geom_text(aes(x=date, y=divergence, label = rownames(true_keep))) +
       geom_point(data = wrong_upkeep, color = "red") +
-      geom_text(data=wrong_upkeep, 
-                aes(x=date, y=divergence, label = rownames(wrong_upkeep))) +
       geom_point(data = wrong_downkeep, color = "blue") +
-      geom_text(data=wrong_downkeep, 
-                aes(x=date, y=divergence, label = rownames(wrong_downkeep))) +
-      geom_point(data = exclude, color = "black", alpha = 0.25) +
-      geom_text(data=exclude, aes(x=date, y=divergence, 
-                                  label = rownames(exclude)), alpha=0.25)
+      geom_point(data = exclude, color = "black", alpha = 0.25) 
+    if (input$tip2){
+      p <- p+geom_text(aes(x=date, y=divergence, label = rownames(true_keep)))+
+        geom_text(data=wrong_upkeep, 
+                  aes(x=date, y=divergence, label = rownames(wrong_upkeep)))+
+        geom_text(data=wrong_downkeep, 
+                  aes(x=date, y=divergence, label = rownames(wrong_downkeep)))+
+        geom_text(data=exclude, aes(x=date, y=divergence, 
+                                    label = rownames(exclude)), alpha=0.25)
+    }
     if (input$update_data) {
       p2 <- p + geom_smooth(data=keep, aes(x=date, y=divergence), method="lm", 
                             se=FALSE, colour=input$color2)
@@ -194,6 +219,10 @@ app_server <- function( input, output, session ) {
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
     y <- keep$divergence
+    fra <- data.frame(time=x, res=y)
+    fra <- meangroup(fra)
+    x <- fra$time
+    y <- fra$res
     lm3 <- lm(y~x)
     residuals_3 <- rstudent(lm3)
     p3 <- plot(y=residuals_3, x=x, type="l", xlab="time", ylab="residuals") + 
@@ -205,6 +234,10 @@ app_server <- function( input, output, session ) {
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
     y <- keep$divergence
+    fra <- data.frame(time=x,div=y)
+    fra <- fra[order(fra$time),]
+    x <- fra$time
+    y <- fra$div
     lm4 <- lm(y~x)
     residuals_4 <- rstudent(lm4)
     p4 <- acf(residuals_4)
@@ -232,7 +265,7 @@ app_server <- function( input, output, session ) {
         fra <- rbind(fra, addfra)
       }
     }
-    fra <- fra[order(fra$time),]
+    fra <- meangroup(fra)
     x <- fra$time
     y <- fra$res
     lm6 <- lm(y~x)
@@ -271,7 +304,7 @@ app_server <- function( input, output, session ) {
         tree <- drop.tip(tree, dele_label)
       }
     }
-    date <- numeric(length(tree$tip.label))
+    date <- numeric(length(tree$label))
     if (input$type1) {
       date <- dateType1(tree, input$order1)
     }
@@ -311,10 +344,7 @@ app_server <- function( input, output, session ) {
   digits = 5, width = 8)
   
   output$Sample <- renderTable({
-    inFile <- input$file1
-    if (is.null(inFile)) 
-      return(NULL)
-    tree <- read.tree(inFile$datapath)
+    tree <- treeda()
     if (input$type1) {
       date <- dateType1(tree, input$order1)
     }
@@ -333,5 +363,5 @@ app_server <- function( input, output, session ) {
       colnames(frame) <- c("tip.label", "dates")
       print(frame)
     }
-  })    
+  })     
 }

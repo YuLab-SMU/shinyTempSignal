@@ -18,6 +18,7 @@ Imports:
     shinydashboard,
     shinyjs,
     stringr,
+    treeio,
     TSA
 Suggests:
     attempt,
