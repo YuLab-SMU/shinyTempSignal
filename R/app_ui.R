@@ -12,6 +12,9 @@ app_ui <- function(request) {
                   dashboardHeader(title="Temporal Signal"),
                   dashboardSidebar(
                     useShinyjs(),
+                    title="Please select a file type:",
+                    checkboxInput("type4","nwk"),
+                    checkboxInput("type5", "tree"),
                     fileInput("file1", "choose a tree", accept="nwk"),
                     fileInput("file2", "choose a beast_file", accept="tree"),
                     fileInput("file3", "choose a mlc_file"),

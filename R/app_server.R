@@ -37,20 +37,28 @@ app_server <- function( input, output, session ) {
   })
   observeEvent(input$type3, {toggle("REGEX")
   })
+  observeEvent(input$type4, {toggle("file1")
+  })
+  observeEvent(input$type5, {toggle("file2")
+  })
+  observeEvent(input$type5, {toggle("file3")
+  })
+  observeEvent(input$type5, {toggle("file4")
+  })
   height <- reactive({
     return(input$height)
   })
   
   treeda <- reactive({
-    inFile <- input$file1
-    beast_file <- input$file2
-    mlc_file <- input$file3
-    rst_file <- input$file4
-    if (!is.null(inFile)){
-      tree <- read.tree(inFile$datapath)
-      return(tree)
-    }
     if (input$fileinput==1){
+      inFile <- input$file1
+      beast_file <- input$file2
+      mlc_file <- input$file3
+      rst_file <- input$file4
+      if (!is.null(inFile)){
+        tree <- read.tree(inFile$datapath)
+        return(tree)
+      }
       beast_tree <- read.beast(beast_file$datapath)
       codeml_tree <- read.codeml(rst_file$datapath, mlc_file$datapath)
       merged_tree <- merge_tree(beast_tree, codeml_tree)
@@ -82,11 +90,6 @@ app_server <- function( input, output, session ) {
     tree_data <- data.frame(date=treeData$date, divergence=treeData$divergence)
     row.names(tree_data) <- treeData$tip.label
     return(tree_data)
-  })
-  
-  observeEvent(input$file1, {
-    tree <- treeda()
-    vals$keeprows <- rep(TRUE, length(tree$tip.label))
   })
   
   observeEvent(input$fileinput, {
