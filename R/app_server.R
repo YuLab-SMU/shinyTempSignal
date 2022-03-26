@@ -340,7 +340,7 @@ app_server <- function( input, output, session ) {
       abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
     summary[5, 2] <- summary(lm.rtt)$r.squared
     summary[6, 2] <- summary(lm.rtt)[["sigma"]]
-    summary[7, 2] <- shapiro.test(rstudent(lm(df)))
+    summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
     summary[8, 2] <- runs(rstudent(lm(df)))
     print(summary)
   },
