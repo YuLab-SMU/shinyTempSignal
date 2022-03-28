@@ -170,17 +170,24 @@ app_server <- function( input, output, session ) {
                            < input$pvalue / 2 & rst < 0, ]
     treeData$up_labelname <- row.names(upvalue)
     treeData$down_labelname <- row.names(downvalue)
+    u <- 1
+    v <- 1
     for (i in 1:(length(keep$divergence))) {
-      if (keep$divergence[i] %in% upvalue$divergence 
-          || keep$divergence[i] %in% downvalue$divergence) {
+      if ((isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
+           isTRUE(keep$date[i] == upvalue$date[u]))
+          || (isTRUE(keep$divergence[i] == downvalue$divergence[v]) & 
+              isTRUE(keep$date[i] == downvalue$date[v]))) {
         vals$rightkeep[i] <- FALSE
-        if (keep$divergence[i] %in% upvalue$divergence) {
+        if (isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
+            isTRUE(keep$date[i] == upvalue$date[u])) {
           vals$upkeep[i] <- TRUE
           vals$downkeep[i] <- FALSE
+          u <- u+1
         }
         else{
           vals$upkeep[i] <- FALSE
           vals$downkeep[i] <- TRUE
+          v <- v+1
         }
       }
       else{
@@ -259,10 +266,12 @@ app_server <- function( input, output, session ) {
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
+    x <- round(x, 1)
     y <- keep$divergence
     fra <- data.frame(time=x,res=y)
     #为丢失的年份设定缺失值
-    for (i in min(x):max(x)) {
+    q <- seq(from=min(x), to=max(x), 0.1)
+    for (i in q) {
       if(!i%in%fra$time){
         addfra <- data.frame(time=i, res=NA)
         fra <- rbind(fra, addfra)
@@ -280,7 +289,7 @@ app_server <- function( input, output, session ) {
         j <- j+1
       }
     }
-    dwelling <- ts(fra$res, start=min(x))
+    dwelling <- ts(fra$res, start=min(x), frequency=10)
     #填补缺失值
     dwelling <- forecast::na.interp(dwelling)
     if (input$fmethod == "ARIMA") {
@@ -307,7 +316,6 @@ app_server <- function( input, output, session ) {
         tree <- drop.tip(tree, dele_label)
       }
     }
-    date <- numeric(length(tree$label))
     if (input$type1) {
       date <- dateType1(tree, input$order1)
     }
@@ -315,7 +323,7 @@ app_server <- function( input, output, session ) {
       date <- dateType2(tree, input$order2, input$prefix)
     }
     if (input$type3) {
-      date <- dateType3(input$REGEX)
+      date <- dateType3(tree, input$REGEX)
     }
     date <- dateNumeric(date, input$format)
     divergence <- getdivergence(tree, date, input$method)
@@ -366,5 +374,5 @@ app_server <- function( input, output, session ) {
       colnames(frame) <- c("tip.label", "dates")
       print(frame)
     }
-  })     
+  })      
 }
