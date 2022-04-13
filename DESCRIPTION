@@ -37,3 +37,5 @@ Suggests:
 Encoding: UTF-8
 RoxygenNote: 7.1.2
 Config/testthat/edition: 3
+Depends: 
+    R (>= 2.10)

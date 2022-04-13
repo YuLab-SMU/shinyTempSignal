@@ -7,7 +7,11 @@
 #' @export
 #' @importFrom shiny shinyApp
 #' @importFrom golem with_golem_options 
-run_app <- function(
+#' @return Shiny application object
+#' @export
+#' @examples
+#' if (interactive()) {run_shinyTempSignal()}
+run_shinyTempSignal <- function(
   onStart = NULL,
   options = list(), 
   enableBookmarking = NULL,
