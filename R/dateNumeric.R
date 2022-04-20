@@ -19,23 +19,23 @@ dateNumeric <- function(date, format) {
     date <- Date2decimal(date)
   }
   if (format == "yyyy/MM/dd") {
-    date <- as.Date(date, format="%Y/%m/%d")
+    date <- as.character.Date(as.Date(date, format="%Y/%m/%d"))
     date <- Date2decimal(date)
   }
   if (format == "yyyy.MM.dd") {
-    date <- as.Date(date, format="%Y.%m.%d")
+    date <- as.character.Date(as.Date(date, format="%Y.%m.%d"))
     date <- Date2decimal(date)
   }
   if (format == "MM-dd-yyyy") {
-    date <- as.Date(date, format="%m-%d-%Y")
+    date <- as.character.Date(as.Date(date, format="%m-%d-%Y"))
     date <- Date2decimal(date)
   }
   if (format == "MM/dd/yyyy") {
-    date <- as.Date(date, format="%m/%d/%Y")
+    date <- as.character.Date(as.Date(date, format="%m/%d/%Y"))
     date <- Date2decimal(date)
   }
   if (format == "MM.dd.yyyy") {
-    date <- as.Date(date, format="%m.%d.%Y")
+    date <- as.character.Date(as.Date(date, format="%m.%d.%Y"))
     date <- Date2decimal(date)
   }
   return(date)
