@@ -26,6 +26,7 @@
 #' @importFrom stats pt
 #' @importFrom stats shapiro.test
 #' @importFrom stats ts
+
 #' @noRd
 app_server <- function( input, output, session ) {
   # Your application server logic 
@@ -225,6 +226,7 @@ app_server <- function( input, output, session ) {
     return(p2)
   })
   output$distPlot3 <- renderPlot({
+    time <- NULL
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
@@ -243,18 +245,20 @@ app_server <- function( input, output, session ) {
     return(p3)
   })
   output$distPlot4 <- renderPlot({
+    time <- NULL
+    lag <- NULL
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
-    y <- keep$divergence
+    y <- keep$divergence 
     fra <- data.frame(time=x,div=y)
     fra <- fra[order(fra$time),]
     x <- fra$time
     y <- fra$div
     lm4 <- lm(y~x)
     residuals_4 <- rstudent(lm4)
-    bacf <- acf(residuals_4, plot = FALSE)
-    h <- sd(abs(as.numeric(bacf$acf)))*2
+    bacf <- stats::acf(residuals_4, plot = FALSE)
+    h <- stats::sd(abs(as.numeric(bacf$acf)))*2
     bacfdf <- with(bacf, data.frame(lag, acf))
     p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
       geom_segment(mapping = aes(xend = lag, yend = 0)
@@ -266,6 +270,7 @@ app_server <- function( input, output, session ) {
     print(p4)
   })
   output$distPlot5 <- renderPlot({
+    time <- NULL
     tree_data <- tree_data()
     keep    <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
@@ -280,6 +285,7 @@ app_server <- function( input, output, session ) {
     return(p5)
   })
   output$distPlot6 <- renderPlot({
+    time <- NULL
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date

@@ -30,7 +30,7 @@ Suggests:
     testthat (>= 3.0.0),
     thinkr
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Config/testthat/edition: 3
 Depends: 
     R (>= 2.10)
