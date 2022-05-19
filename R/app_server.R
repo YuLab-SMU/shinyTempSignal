@@ -235,8 +235,11 @@ app_server <- function( input, output, session ) {
     y <- fra$res
     lm3 <- lm(y~x)
     residuals_3 <- rstudent(lm3)
-    p3 <- plot(y=residuals_3, x=x, type="l", xlab="time", ylab="residuals") + 
-      graphics::points(y=residuals_3, x=x, col="blue")
+    fra$res <- residuals_3
+    p3 <- ggplot(fra,
+                 aes(x=time, y=res)) + geom_point(color="blue") + 
+      geom_line()+labs(title="residuals plot")+
+      theme(plot.title = element_text(hjust = 0.5))
     return(p3)
   })
   output$distPlot4 <- renderPlot({
@@ -250,7 +253,16 @@ app_server <- function( input, output, session ) {
     y <- fra$div
     lm4 <- lm(y~x)
     residuals_4 <- rstudent(lm4)
-    p4 <- acf(residuals_4)
+    bacf <- acf(residuals_4, plot = FALSE)
+    h <- sd(abs(as.numeric(bacf$acf)))*2
+    bacfdf <- with(bacf, data.frame(lag, acf))
+    p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
+      geom_segment(mapping = aes(xend = lag, yend = 0)
+                   , color='black', size = 1,alpha=I(1/2))+
+      geom_hline(aes(yintercept = h), linetype = 2, color = 'darkblue')+
+      geom_hline(aes(yintercept = -h), linetype = 2, color = 'darkblue')+
+      geom_hline(aes(yintercept = 0), linetype = 1, color = 'darkblue')+
+      labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))
     print(p4)
   })
   output$distPlot5 <- renderPlot({
@@ -258,9 +270,14 @@ app_server <- function( input, output, session ) {
     keep    <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
     y <- keep$divergence
-    lm5 <- lm(y~x)
-    residuals_5 <- rstudent(lm5)
-    return(qqnorm(residuals_5))
+    fra <- data.frame(time=x, res=y)
+    lm3 <- lm(y~x)
+    residuals_3 <- rstudent(lm3)
+    fra$res <- residuals_3
+    p5 <-ggplot(fra,aes(sample=res))+
+      stat_qq()+labs(title="Normal Q-Q plot")+
+      theme(plot.title = element_text(hjust = 0.5))
+    return(p5)
   })
   output$distPlot6 <- renderPlot({
     tree_data <- tree_data()
