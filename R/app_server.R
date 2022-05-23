@@ -223,6 +223,12 @@ app_server <- function( input, output, session ) {
                           aes(x=date, y=divergence), method="lm",
                           se=FALSE, colour=input$color2)
     }
+    p2 <- p2 + 
+      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
+      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
+      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
     return(p2)
   })
   output$distPlot3 <- renderPlot({
@@ -241,7 +247,12 @@ app_server <- function( input, output, session ) {
     p3 <- ggplot(fra,
                  aes(x=time, y=res)) + geom_point(color="blue") + 
       geom_line()+labs(title="residuals plot")+
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(plot.title = element_text(hjust = 0.5))+
+      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
+      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
+      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
     return(p3)
   })
   output$distPlot4 <- renderPlot({
@@ -257,16 +268,21 @@ app_server <- function( input, output, session ) {
     y <- fra$div
     lm4 <- lm(y~x)
     residuals_4 <- rstudent(lm4)
-    bacf <- stats::acf(residuals_4, plot = FALSE)
+    bacf <- TSA::acf(residuals_4, plot = FALSE)
     h <- stats::sd(abs(as.numeric(bacf$acf)))*2
     bacfdf <- with(bacf, data.frame(lag, acf))
     p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
       geom_segment(mapping = aes(xend = lag, yend = 0)
                    , color='black', size = 1,alpha=I(1/2))+
-      geom_hline(aes(yintercept = h), linetype = 2, color = 'darkblue')+
-      geom_hline(aes(yintercept = -h), linetype = 2, color = 'darkblue')+
-      geom_hline(aes(yintercept = 0), linetype = 1, color = 'darkblue')+
-      labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))
+      geom_hline(yintercept = h, linetype = 2, color = 'darkblue')+
+      geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
+      geom_hline(yintercept = 0, linetype = 1, color = 'black')+
+      labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
+      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
+      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
+      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
     print(p4)
   })
   output$distPlot5 <- renderPlot({
@@ -281,7 +297,12 @@ app_server <- function( input, output, session ) {
     fra$res <- residuals_3
     p5 <-ggplot(fra,aes(sample=res))+
       stat_qq()+labs(title="Normal Q-Q plot")+
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(plot.title = element_text(hjust = 0.5))+
+      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
+      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
+      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
     return(p5)
   })
   output$distPlot6 <- renderPlot({
@@ -317,15 +338,25 @@ app_server <- function( input, output, session ) {
     dwelling <- forecast::na.interp(dwelling)
     if (input$fmethod == "ARIMA") {
       p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
-        as.numeric(input$hstep)) %>% autoplot(
+        as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
-        )
+        )+
+        theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
+        theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
+        theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
+        theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
+        theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
     }
     if (input$fmethod == "ETS") {
       p<- dwelling %>% forecast::ets() %>% forecast::forecast(
-        as.numeric(input$hstep)) %>% autoplot(
+        as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
-        )
+        )+
+        theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
+        theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
+        theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
+        theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
+        theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
     }
     print(p)
   })
