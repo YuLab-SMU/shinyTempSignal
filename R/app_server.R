@@ -6,6 +6,7 @@
 #' @import ggtree
 #' @import ggplot2
 #' @import stringr
+#' @import ggprism
 #' @import Cairo
 #' @importFrom shinyjs toggle
 #' @rawNamespace import(ggpubr, except = rotate)
@@ -16,9 +17,9 @@
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
 #' @importFrom TSA runs
+#' @importFrom TSA acf
 #' @importFrom forecast forecast
 #' @importFrom aTSA adf.test
-#' @importFrom stats acf
 #' @importFrom stats cor
 #' @importFrom stats lm
 #' @importFrom stats qqnorm
@@ -84,6 +85,15 @@ app_server <- function( input, output, session ) {
     down_labelname=c()
   )
   
+  mySet <- reactiveValues(
+    mySetTheme = theme(plot.title = element_text(
+      hjust = 0.5, size=20,face = "bold"))+
+      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
+      theme(axis.text.y=element_text(vjust=1, size=15,face = "bold"))+
+      theme(axis.text.x=element_text(vjust=1, size=15,face = "bold"))
+  )
+  
   category <- reactiveValues()
   abnormal <- reactiveValues()
   
@@ -101,7 +111,6 @@ app_server <- function( input, output, session ) {
   observeEvent(input$plot2_click, {
     tree_data <- tree_data()
     res <- nearPoints(tree_data, input$plot2_click, allRows=TRUE)
-    
     vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
@@ -223,12 +232,7 @@ app_server <- function( input, output, session ) {
                           aes(x=date, y=divergence), method="lm",
                           se=FALSE, colour=input$color2)
     }
-    p2 <- p2 + 
-      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
-      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
-      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
+    p2 <- p2 + mySet$mySetTheme 
     return(p2)
   })
   output$distPlot3 <- renderPlot({
@@ -247,12 +251,7 @@ app_server <- function( input, output, session ) {
     p3 <- ggplot(fra,
                  aes(x=time, y=res)) + geom_point(color="blue") + 
       geom_line()+labs(title="residuals plot")+
-      theme(plot.title = element_text(hjust = 0.5))+
-      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
-      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
-      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
+      theme_prism(base_size = 15, border = TRUE)
     return(p3)
   })
   output$distPlot4 <- renderPlot({
@@ -278,11 +277,7 @@ app_server <- function( input, output, session ) {
       geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
       geom_hline(yintercept = 0, linetype = 1, color = 'black')+
       labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
-      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
-      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
-      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
+      theme_prism(base_size = 15, border = TRUE)
     print(p4)
   })
   output$distPlot5 <- renderPlot({
@@ -297,12 +292,7 @@ app_server <- function( input, output, session ) {
     fra$res <- residuals_3
     p5 <-ggplot(fra,aes(sample=res))+
       stat_qq()+labs(title="Normal Q-Q plot")+
-      theme(plot.title = element_text(hjust = 0.5))+
-      theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
-      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
-      theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
+      theme_prism(base_size = 15, border = TRUE)
     return(p5)
   })
   output$distPlot6 <- renderPlot({
@@ -341,22 +331,14 @@ app_server <- function( input, output, session ) {
         as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
         )+
-        theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
-        theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
-        theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
-        theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
-        theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
+        mySet$mySetTheme
     }
     if (input$fmethod == "ETS") {
       p<- dwelling %>% forecast::ets() %>% forecast::forecast(
         as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
         )+
-        theme(plot.title = element_text(hjust = 0.5, size=20,face = "bold"))+
-        theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
-        theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
-        theme(axis.text.y=element_text(vjust=1,size=10,face = "bold"))+
-        theme(axis.text.x=element_text(vjust=1,size=10,face = "bold"))
+        mySet$mySetTheme
     }
     print(p)
   })

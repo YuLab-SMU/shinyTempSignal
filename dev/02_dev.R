@@ -28,6 +28,7 @@ usethis::use_package( "TSA" )
 usethis::use_package( "aTSA" )
 usethis::use_package( "forecast")
 usethis::use_package("treeio")
+usethis::use_package("ggprism")
 
 ## Add modules ----
 ## Create a module infrastructure in R/
