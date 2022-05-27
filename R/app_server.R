@@ -85,15 +85,17 @@ app_server <- function( input, output, session ) {
     down_labelname=c()
   )
   
-  mySet <- reactiveValues(
-    mySetTheme = theme(plot.title = element_text(
+  mySetTheme <- function()
+  {
+    mySetTheme <- theme(plot.title = element_text(
       hjust = 0.5, size=20,face = "bold"))+
       theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
       theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
       theme(axis.text.y=element_text(vjust=1, size=15,face = "bold"))+
       theme(axis.text.x=element_text(vjust=1, size=15,face = "bold"))
-  )
-  
+    return(mySetTheme)
+  }
+    
   category <- reactiveValues()
   abnormal <- reactiveValues()
   
@@ -232,7 +234,7 @@ app_server <- function( input, output, session ) {
                           aes(x=date, y=divergence), method="lm",
                           se=FALSE, colour=input$color2)
     }
-    p2 <- p2 + mySet$mySetTheme 
+    p2 <- p2 + mySetTheme() 
     return(p2)
   })
   output$distPlot3 <- renderPlot({
@@ -330,15 +332,13 @@ app_server <- function( input, output, session ) {
       p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
         as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
-        )+
-        mySet$mySetTheme
+        )+mySetTheme()
     }
     if (input$fmethod == "ETS") {
       p<- dwelling %>% forecast::ets() %>% forecast::forecast(
         as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
-        )+
-        mySet$mySetTheme
+        )+mySetTheme()
     }
     print(p)
   })
