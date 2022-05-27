@@ -87,12 +87,12 @@ app_server <- function( input, output, session ) {
   
   mySetTheme <- function()
   {
-    mySetTheme <- theme(plot.title = element_text(
-      hjust = 0.5, size=20,face = "bold"))+
-      theme(axis.title.y=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.title.x=element_text(vjust=2, size=15,face = "bold"))+
-      theme(axis.text.y=element_text(vjust=1, size=15,face = "bold"))+
-      theme(axis.text.x=element_text(vjust=1, size=15,face = "bold"))
+    mySetTheme <- theme_prism(base_size = 14, border = TRUE)+
+      theme(panel.grid.major = element_line(colour = "grey",
+                                            size = 0.5,
+                                            linetype = "dotted"))+
+      theme(panel.background =  element_rect(fill = "linen", 
+                                             colour = "grey50"))
     return(mySetTheme)
   }
     
@@ -252,8 +252,7 @@ app_server <- function( input, output, session ) {
     fra$res <- residuals_3
     p3 <- ggplot(fra,
                  aes(x=time, y=res)) + geom_point(color="blue") + 
-      geom_line()+labs(title="residuals plot")+
-      theme_prism(base_size = 15, border = TRUE)
+      geom_line()+labs(title="residuals plot")+mySetTheme()
     return(p3)
   })
   output$distPlot4 <- renderPlot({
@@ -279,7 +278,7 @@ app_server <- function( input, output, session ) {
       geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
       geom_hline(yintercept = 0, linetype = 1, color = 'black')+
       labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
-      theme_prism(base_size = 15, border = TRUE)
+      mySetTheme()
     print(p4)
   })
   output$distPlot5 <- renderPlot({
@@ -293,8 +292,7 @@ app_server <- function( input, output, session ) {
     residuals_3 <- rstudent(lm3)
     fra$res <- residuals_3
     p5 <-ggplot(fra,aes(sample=res))+
-      stat_qq()+labs(title="Normal Q-Q plot")+
-      theme_prism(base_size = 15, border = TRUE)
+      stat_qq()+labs(title="Normal Q-Q plot")+mySetTheme()
     return(p5)
   })
   output$distPlot6 <- renderPlot({
