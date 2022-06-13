@@ -75,7 +75,11 @@ app_server <- function( input, output, session ) {
   vals <- reactiveValues(
     keeprows=rep(TRUE, 1),
     rightkeep=rep(TRUE, 1),
-    upkeep=rep(TRUE, 1)
+    upkeep=rep(TRUE, 1),
+    dataTorF=rep(TRUE,1),
+    upval=rep(TRUE,1),
+    downval=rep(TRUE,1),
+    pvalue=NULL
   )
   
   treeData <- reactiveValues(
@@ -121,6 +125,10 @@ app_server <- function( input, output, session ) {
     tree_data <- tree_data()
     res <- brushedPoints(tree_data, input$plot2_brush, allRows=TRUE)
     vals$keeprows <- xor(vals$keeprows, res$selected_)
+  })
+  
+  observeEvent(input$autodele,{
+    vals$keeprows<-vals$dataTorF
   })
   
   # Reset all points
@@ -174,40 +182,60 @@ app_server <- function( input, output, session ) {
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     exclude <- tree_data[!vals$keeprows, , drop = FALSE]
-    m <- lm(divergence~date, tree_data)
+    if(input$xory == "Y")
+    {
+      m <- lm(divergence~date, tree_data)
+    }
+    else
+    {
+      m <- lm(date~divergence, tree_data)
+    }
     rst <- rstudent(m)
-    upvalue <- tree_data[(0.5 - abs(pt(rst, m$df.residual) - 0.5)) 
-                         < input$pvalue / 2 & rst > 0, ]
-    downvalue <- tree_data[(0.5 - abs(pt(rst, m$df.residual) - 0.5)) 
-                           < input$pvalue / 2 & rst < 0, ]
+    if(!isTRUE(input$pvalue == vals$pvalue))
+    {
+      vals$upval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
+                      < input$pvalue / 2 & rst > 0)
+      vals$downval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
+                        < input$pvalue / 2 & rst < 0)
+      vals$dataTorF <- vals$upval==vals$downval
+      vals$pvalue <- input$pvalue
+    }
+    upvalue <- tree_data[vals$upval, ]
+    downvalue <- tree_data[vals$downval,]
+    upvalueHX <- (upvalue$date)^2+upvalue$divergence
+    downvalueHX <- (downvalue$date)^2+downvalue$divergence
     treeData$up_labelname <- row.names(upvalue)
     treeData$down_labelname <- row.names(downvalue)
-    u <- 1
-    v <- 1
-    for (i in 1:(length(keep$divergence))) {
-      if ((isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
-           isTRUE(keep$date[i] == upvalue$date[u]))
-          || (isTRUE(keep$divergence[i] == downvalue$divergence[v]) & 
-              isTRUE(keep$date[i] == downvalue$date[v]))) {
-        vals$rightkeep[i] <- FALSE
-        if (isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
-            isTRUE(keep$date[i] == upvalue$date[u])) {
-          vals$upkeep[i] <- TRUE
-          vals$downkeep[i] <- FALSE
-          u <- u+1
-        }
-        else{
-          vals$upkeep[i] <- FALSE
-          vals$downkeep[i] <- TRUE
-          v <- v+1
-        }
-      }
-      else{
-        vals$rightkeep[i] <- TRUE
-        vals$upkeep[i] <- FALSE
-        vals$downkeep[i] <- FALSE
-      }
-    }
+    # u <- 1
+    # v <- 1
+    # for (i in 1:(length(keep$divergence))) {
+    #   if ((isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
+    #        isTRUE(keep$date[i] == upvalue$date[u]))
+    #       || (isTRUE(keep$divergence[i] == downvalue$divergence[v]) & 
+    #           isTRUE(keep$date[i] == downvalue$date[v]))) {
+    #     vals$rightkeep[i] <- FALSE
+    #     if (isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
+    #         isTRUE(keep$date[i] == upvalue$date[u])) {
+    #       vals$upkeep[i] <- TRUE
+    #       vals$downkeep[i] <- FALSE
+    #       u <- u+1
+    #     }
+    #     else{
+    #       vals$upkeep[i] <- FALSE
+    #       vals$downkeep[i] <- TRUE
+    #       v <- v+1
+    #     }
+    #   }
+    #   else{
+    #     vals$rightkeep[i] <- TRUE
+    #     vals$upkeep[i] <- FALSE
+    #     vals$downkeep[i] <- FALSE
+    #   }
+    # }
+    keepHX <- (keep$date)^2+keep$divergence
+    vals$upkeep <- keepHX %in% upvalueHX
+    vals$downkeep <- keepHX %in% downvalueHX
+    vals$rightkeep <- vals$upkeep == vals$downkeep
     wrong_upkeep <- keep[vals$upkeep, , drop = FALSE]
     wrong_downkeep <- keep[vals$downkeep, , drop = FALSE]
     true_keep     <- keep[vals$rightkeep, , drop = FALSE]
