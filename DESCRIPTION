@@ -6,7 +6,6 @@ Description: PKG_DESC.
 License: GPL-3
 Imports: 
     ape,
-    aTSA,
     Cairo,
     config (>= 0.3.1),
     DescTools,
@@ -21,8 +20,7 @@ Imports:
     shinydashboard,
     shinyjs,
     stringr,
-    treeio,
-    TSA
+    treeio
 Suggests:
     attempt,
     conflicted,
