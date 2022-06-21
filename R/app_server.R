@@ -16,10 +16,7 @@
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
-#' @importFrom TSA runs
-#' @importFrom TSA acf
 #' @importFrom forecast forecast
-#' @importFrom aTSA adf.test
 #' @importFrom stats cor
 #' @importFrom stats lm
 #' @importFrom stats qqnorm
@@ -27,6 +24,8 @@
 #' @importFrom stats pt
 #' @importFrom stats shapiro.test
 #' @importFrom stats ts
+#' @importFrom stats acf
+#' @importFrom DescTools RunsTest
 
 #' @noRd
 app_server <- function( input, output, session ) {
@@ -296,7 +295,9 @@ app_server <- function( input, output, session ) {
     y <- fra$div
     lm4 <- lm(y~x)
     residuals_4 <- rstudent(lm4)
-    bacf <- TSA::acf(residuals_4, plot = FALSE)
+    bacf <- stats::acf(residuals_4)
+    bacf$acf = bacf$acf[-1, , , drop = FALSE]
+    bacf$lag = bacf$lag[-1, , , drop = FALSE]
     h <- stats::sd(abs(as.numeric(bacf$acf)))*2
     bacfdf <- with(bacf, data.frame(lag, acf))
     p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
@@ -411,7 +412,7 @@ app_server <- function( input, output, session ) {
     summary[5, 2] <- summary(lm.rtt)$r.squared
     summary[6, 2] <- summary(lm.rtt)[["sigma"]]
     summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
-    summary[8, 2] <- runs(rstudent(lm(df)))
+    summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
     print(summary)
   },
   digits = 5, width = 8)
