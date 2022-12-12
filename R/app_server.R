@@ -8,6 +8,7 @@
 #' @import stringr
 #' @import ggprism
 #' @import Cairo
+#
 #' @importFrom shinyjs toggle
 #' @rawNamespace import(ggpubr, except = rotate)
 #' @rawNamespace import(ape, except = rotate)
@@ -16,6 +17,7 @@
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
+#' @importFrom treeio tree_subset
 #' @importFrom forecast forecast
 #' @importFrom stats cor
 #' @importFrom stats lm
@@ -26,6 +28,8 @@
 #' @importFrom stats ts
 #' @importFrom stats acf
 #' @importFrom DescTools RunsTest
+#' @importFrom stats na.omit
+
 
 #' @noRd
 app_server <- function( input, output, session ) {
@@ -51,23 +55,56 @@ app_server <- function( input, output, session ) {
   })
   
   treeda <- reactive({
-    if (input$fileinput==1){
-      inFile <- input$file1
+    inFile <- input$file1
+    if (input$fileinput & is.null(inFile)) {
       beast_file <- input$file2
       mlc_file <- input$file3
       rst_file <- input$file4
-      if (!is.null(inFile)){
-        tree <- read.tree(inFile$datapath)
-        return(tree)
-      }
       beast_tree <- read.beast(beast_file$datapath)
-      codeml_tree <- read.codeml(rst_file$datapath, mlc_file$datapath)
+      codeml_tree <-
+        read.codeml(rst_file$datapath, mlc_file$datapath)
       merged_tree <- merge_tree(beast_tree, codeml_tree)
-      tree<-fortify(merged_tree)
+      tree <- fortify(merged_tree)
       treea1 <- rescale_tree(merged_tree, input$distance)
       treea2 <- treea1@phylo
-      return(treea2)
+      if (!is.null(input$node)) {
+        if (input$node_number == TRUE) {
+          treea2 <-
+            tree_subset(treea2,
+                        node = as.numeric(input$node),
+                        levels_back = 0)
+          return(treea2)
+        }
+        if (input$label == TRUE) {
+          treea2 <-
+            tree_subset(treea2,
+                        node = as.character(input$node),
+                        levels_back = 8)
+          return(treea2)
+        }
+        
+        return(treea2)
+      }
+      
     }
+    if (input$fileinput & !is.null(inFile)) {
+      tree <- read.tree(inFile$datapath)
+      if (input$node_number == TRUE) {
+        tree <- tree_subset(tree, input$node, levels_back = 0)
+        return(tree)
+      }
+      if (input$label == TRUE) {
+        tree <-
+          tree_subset(tree,
+                      node = as.character(input$node),
+                      levels_back = 8)
+        return(tree)
+      }
+      
+      return(tree)
+    }
+    
+    
     return(NULL)
   })
   
@@ -437,5 +474,101 @@ app_server <- function( input, output, session ) {
       colnames(frame) <- c("tip.label", "dates")
       print(frame)
     }
-  })      
+  })
+  output$dataframe <- renderTable({
+    tree <- treeda()
+    #1 set parameters needed
+    a = length(tree$tip.label) + 1
+    b = length(tree$tip.label) + tree$Nnode
+    sub.tree <- list()
+    date <- list()
+    divergence <- list()
+    df_td = list()
+    model.results <- list()
+    modele <- list()
+    for (i in a:b) {
+      f = i - a + 1
+      sub.tree[[f]] <-
+        tree_subset(tree = tree,
+                    node = i,
+                    levels_back = 0)
+      if (input$type1) {
+        date[[f]] <-
+          dateType1(tree = sub.tree[[f]], order = input$order1) %>% dateNumeric(format =
+                                                                                  input$format)
+      } else if (input$type2) {
+        date[[f]] <-
+          dateType2(
+            tree = sub.tree[[f]],
+            order = input$order2,
+            prefix = input$prefix
+          ) %>% dateNumeric(format = input$format)
+      } else{
+        date[[f]] <-
+          dateType3(tree = sub.tree[[f]], pattern = input$REGEX) %>% dateNumeric(format =
+                                                                                   input$format)
+      }
+      #date[[f]] <-
+      # dateNumeric(date = date[[f]] , format = format)
+      if (input$type5) {
+        if (Nedge(sub.tree[[f]]) > 3 &
+            length(unique(sub.tree[[f]]$tip.label)) > 5) {
+          divergence[[f]] <- getdivergence(tree = sub.tree[[f]],
+                                           date = date[[f]],
+                                           method = "correlation")
+        } else{
+          divergence[[f]] <- NA
+        }
+      } else{
+        if (Nedge(sub.tree[[f]]) > 9
+            & length(unique(sub.tree[[f]]$tip.label)) > 9) {
+          divergence[[f]] <- getdivergence(tree = sub.tree[[f]],
+                                           date = date[[f]],
+                                           method = "correlation")
+        } else{
+          divergence[[f]] <- NA
+        }
+      }
+      
+      df_td[[f]] <- if (unique(is.na(divergence[[f]]))) {
+        NA
+      } else{
+        as.data.frame(cbind(date = date[[f]], divergence = divergence[[f]][, 1]))
+      }
+      model.results[[f]] <-
+        if (unique(is.na(divergence[[f]]))) {
+          NA
+        } else{
+          m <- lm(divergence ~ date, data = df_td[[f]])
+          rst <- rstudent(m)
+          upval <- c((0.5 - abs(pt(
+            rst, m$df.residual
+          ) - 0.5))
+          < 0.05 / 2 & rst > 0)
+          downval <- c((0.5 - abs(pt(
+            rst, m$df.residual
+          ) - 0.5))
+          < 0.05 / 2 & rst < 0)
+          
+          
+          modele <-
+            summary(lm(divergence ~ date, data = df_td[[f]]))
+          data.frame(
+            node = i,
+            r.squared = modele$r.squared,
+            adj.r.squared = modele$adj.r.squared,
+            pvalue = modele$coefficients[nrow(modele$coefficients), ncol(modele$coefficients)],
+            slope = modele$coefficients[nrow(modele$coefficients), 1],
+            intercept = modele$coefficients[1, 1],
+            up = length(which(upval == T)),
+            down = length(which(downval == T)),
+            total_abnormal = length(which(upval == T)) + length(which(downval == T))
+          )
+        }
+    }
+    df <- na.omit(do.call(rbind, model.results))
+    
+    df[order(df$total_abnormal, decreasing = T), ]
+    
+  }, digits = 20)
 }

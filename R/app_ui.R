@@ -4,6 +4,7 @@
 #'     DO NOT REMOVE.
 #' @import shiny
 #' @import shinydashboard
+
 #' @importFrom shinyjs useShinyjs
 #' @noRd
 app_ui <- function(request) {
@@ -19,9 +20,6 @@ app_ui <- function(request) {
                     fileInput("file2", "choose a beast_file", accept="tree"),
                     fileInput("file3", "choose a mlc_file"),
                     fileInput("file4", "choose a rst_file"),
-                    actionButton("fileinput", "submit"),
-                    sidebarMenu(menuItem("Sample Dates", tabName="Dates"),
-                                menuItem("Root-to-tip", tabName="root")),   
                     title="Choose a way to parse dates:",
                     checkboxInput("type1", "Defined just by its order"),
                     checkboxInput("type2", 
@@ -40,7 +38,15 @@ app_ui <- function(request) {
                     textInput("prefix", "Date_prefix:"), 
                     selectInput("order2", 
                                 "prefix_order:", c("first", "last")), 
-                    textInput("REGEX", "regular expression:") 
+                    textInput("REGEX", "regular expression:"),
+                    actionButton("fileinput", "submit"),
+                    sidebarMenu(menuItem("Sample Dates", tabName="Dates"),
+                                menuItem("The_regression_of_subsetting_tree",tabName = "node"),
+                                menuItem("Root-to-tip", tabName="root")),
+                    title="Choose a way to get your subsetting tree:",
+                    fluidRow(column(6,checkboxInput("node_number","node number")),
+                             column(6,checkboxInput("label","label"))),
+                    textInput("node","subset_node")
                   ),
                   ## Design point to open the menu interface :tree Dates root
                   dashboardBody(
@@ -48,6 +54,7 @@ app_ui <- function(request) {
                       tabItem(tabName="Dates",
                               tableOutput("Sample")
                       ),
+                      tabItem(tabName="node", tableOutput("dataframe")),
                       tabItem(tabName="root",
                               box(plotOutput("distplot1"), width=8),
                               box(width=4,
