@@ -120,3 +120,4 @@ meangroup <- function(d){
   names(dd)<- c(names(d)[1], names(d)[2])
   return(dd)
 }
+

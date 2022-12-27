@@ -90,7 +90,7 @@ app_server <- function( input, output, session ) {
     if (input$fileinput & !is.null(inFile)) {
       tree <- read.tree(inFile$datapath)
       if (input$node_number == TRUE) {
-        tree <- tree_subset(tree, input$node, levels_back = 0)
+        tree <- tree_subset(tree, as.numeric(input$node), levels_back = 0)
         return(tree)
       }
       if (input$label == TRUE) {
@@ -175,6 +175,54 @@ app_server <- function( input, output, session ) {
   ##output tree plot by using ggtree
   output$distplot1 <- renderPlot({    
     tree <- treeda()
+    if (input$type1) {
+      date <- dateType1(tree, input$order1)
+    }
+    if (input$type2) {
+      date <- dateType2(tree, input$order2, input$prefix)
+    }
+    if (input$type3) {
+      date <- dateType3(tree, input$REGEX)
+    }
+    date <- dateNumeric(date, input$format)
+    divergence <- getdivergence(tree, date, input$method)
+    treeData$date <- date
+    treeData$divergence <- divergence
+    treeData$tip.label <- tree$tip.label
+    tree_data <- tree_data()
+    keep <- tree_data[vals$keeprows, , drop = FALSE]
+    exclude <- tree_data[!vals$keeprows, , drop = FALSE]
+    if(input$xory == "Y")
+    {
+      m <- lm(divergence~date, tree_data)
+    }
+    else
+    {
+      m <- lm(date~divergence, tree_data)
+    }
+    rst <- rstudent(m)
+    if(!isTRUE(input$pvalue == vals$pvalue))
+    {
+      vals$upval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
+                      < input$pvalue / 2 & rst > 0)
+      vals$downval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
+                        < input$pvalue / 2 & rst < 0)
+      vals$dataTorF <- vals$upval==vals$downval
+      vals$pvalue <- input$pvalue
+    }
+    upvalue <- tree_data[vals$upval, ]
+    downvalue <- tree_data[vals$downval,]
+    upvalueHX <- (upvalue$date)^2+upvalue$divergence
+    downvalueHX <- (downvalue$date)^2+downvalue$divergence
+    treeData$up_labelname <- row.names(upvalue)
+    treeData$down_labelname <- row.names(downvalue)
+    keepHX <- (keep$date)^2+keep$divergence
+    vals$upkeep <- keepHX %in% upvalueHX
+    vals$downkeep <- keepHX %in% downvalueHX
+    vals$rightkeep <- vals$upkeep == vals$downkeep
+    wrong_upkeep <- keep[vals$upkeep, , drop = FALSE]
+    wrong_downkeep <- keep[vals$downkeep, , drop = FALSE]
+    true_keep     <- keep[vals$rightkeep, , drop = FALSE]
     tree_data <- tree_data()
     all <- tree_data
     all <- cbind(all, category=vals$keeprows)
@@ -185,7 +233,8 @@ app_server <- function( input, output, session ) {
                        abnormal=rep("dowm", length(treeData$down_labelname)))
     d <- rbind(up, dowm)
     dd <- merge(all, d, by="label", all=TRUE)
-    p <- ggtree(tree, color=input$color3, size=input$size)
+    p <- ggtree(tree, color=input$color3, size=input$size)+geom_nodelab(aes(label=node))
+  
     p1 <- p %<+% dd + geom_tippoint(aes(shape=abnormal), size=2.5, color="red")
     if (input$tip) {
       p2 <- p1 + geom_tiplab(size=input$tipsize)
