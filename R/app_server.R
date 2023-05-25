@@ -347,11 +347,11 @@ app_server <- function( input, output, session )  {
         upval <- c((0.5 - abs(pt(
           rst, m$df.residual
         ) - 0.5))
-        < 0.05 / 2 & rst > 0)
+        < input$pvalue/ 2 & rst > 0)
         downval <- c((0.5 - abs(pt(
           rst, m$df.residual
         ) - 0.5))
-        < 0.05 / 2 & rst < 0)
+        < input$pvalue / 2 & rst < 0)
         modele <-
           summary(lm(divergence ~ date, data = df_td[[f]]))
         data.frame(
