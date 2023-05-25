@@ -26,7 +26,8 @@ Imports:
     shinydashboard,
     shinyjs,
     stringr,
-    treeio
+    treeio,
+    ggpmisc
 Suggests:
     attempt,
     conflicted,
