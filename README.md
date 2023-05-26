@@ -17,7 +17,7 @@ You can install `shinyTempSignal` from github using devtools :
 # Quick Guides
 
     library(shinyTempSignal)
-    run_app()
+    run_shinyTempSignal()
 
 # Reference
 
