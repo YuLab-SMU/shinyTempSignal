@@ -8,6 +8,7 @@
 #' @import stringr
 #' @import ggprism
 #' @import Cairo
+#' @import ggpmisc
 #
 #' @importFrom shinyjs toggle
 #' @rawNamespace import(ggpubr, except = rotate)
@@ -18,6 +19,7 @@
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
 #' @importFrom treeio tree_subset
+#' @importFrom treeio read.phylip.tree
 #' @importFrom forecast forecast
 #' @importFrom stats cor
 #' @importFrom stats lm
@@ -29,503 +31,297 @@
 #' @importFrom stats acf
 #' @importFrom DescTools RunsTest
 #' @importFrom stats na.omit
-
-
+#' @importFrom stats as.formula
+#' @importFrom ggpmisc stat_poly_eq
+#' @importFrom utils read.csv
 #' @noRd
-app_server <- function( input, output, session ) {
-  # Your application server logic 
-  observeEvent(input$type1, {toggle("order1")
+app_server <- function( input, output, session )  {
+  category <- ..eq.label.. <- ..rr.label.. <- NULL
+  observeEvent(input$plotClick, {
+    tree <- tree()
+    p <- ggtree(tree)
+    x <- as.numeric(input$plotClick$x)
+    y <- as.numeric(input$plotClick$y)
+    node <- click_node(x, y, p$data)
+    updateTextInput(session,"node",value = node)
   })
-  observeEvent(input$type2, {toggle("order2")
+  click_node <- function(x, y, tr) {
+    sq_dx <- (x - tr$x)^2
+    sq_dy <- (y - tr$y)^2
+    i <- which.min(sq_dx + sq_dy)
+    node <- tr$node[i]
+    return(node)
+  }
+  #1.读入树文件
+  tree <- reactive({
+    infile <- input$treefile
+    if (!is.null(infile)) {
+      if (input$filetype=="Newick") {
+        tree <- read.tree(infile$datapath) %>% as.phylo()
+      } else if (input$filetype=="beast") {
+        tree <- read.beast(infile$datapath) %>% as.phylo()
+      } else if (input$filetype=="Nexus") {
+        tree <- read.nexus(infile$datapath)
+      } else if (input$filetype=="phylip") {
+        tree <- read.phylip.tree(infile$datapath) %>% as.phylo()
+      }
+      
+      if (input$node != "") {
+        
+        if (as.numeric(input$node)<length(as.phylo(tree)$tip.label)) {
+          stop("it is a tip label")
+        }else{
+          tree <- tree_subset(tree,as.numeric(input$node),levels_back = 0)
+        }
+      }
+      return(tree)
+    } else {
+      return(NULL)
+    }
   })
-  observeEvent(input$type2, {toggle("prefix")
+  #全部在外面取出来不就好了
+  data <- reactive({
+    tree <- tree()
+    if (!is.null(tree)){
+      tree <- tree %>% as.phylo()
+      date <-dateType3(tree = tree,pattern = input$regression)
+      date <- dateNumeric(date = date,format = input$format)
+      divergence <- getdivergence(tree = tree)
+      df <- cbind(label=tree$tip.label,date=date,divergence=divergence)
+      return(df)
+    }else{
+      return(NULL)
+    }
+    
   })
-  observeEvent(input$type3, {toggle("REGEX")
+  date <- reactive({
+    tree <- tree()
+    if (!is.null(tree)){
+      tree <- tree %>% as.phylo()
+      date <-dateType3(tree = tree,pattern = input$regression)
+      date <- dateNumeric(date = date,format = input$format)
+      return(date)
+    }else{
+      return(NULL)
+    }
   })
-  observeEvent(input$type4, {toggle("file1")
-  })
-  observeEvent(input$type5, {toggle("file2")
-  })
-  observeEvent(input$type5, {toggle("file3")
-  })
-  observeEvent(input$type5, {toggle("file4")
+  label <-reactive({
+    tree <- tree()
+    if (!is.null(tree)){
+      tree <- tree %>% as.phylo()
+      label <-tree$tip.label
+      return(label)
+    }else{
+      return(NULL)
+    }
+  }) 
+  
+  divergence <- reactive({
+    tree <- tree()
+    if (!is.null(tree)){
+      divergence <- getdivergence(tree = tree)
+      return(divergence)
+    }else{
+      return(NULL)
+    }
   })
   height <- reactive({
     return(input$height)
   })
+  estimate <- function(df,p){lm=lm(df$divergence~ df$date)
+  rst <- rstudent(lm)
+  down <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p / 2&rst<0
+  up <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p/ 2&rst>0
+  return(list(down=down,up=up))}
   
-  treeda <- reactive({
-    inFile <- input$file1
-    if (input$fileinput & is.null(inFile)) {
-      beast_file <- input$file2
-      mlc_file <- input$file3
-      rst_file <- input$file4
-      beast_tree <- read.beast(beast_file$datapath)
-      codeml_tree <-
-        read.codeml(rst_file$datapath, mlc_file$datapath)
-      merged_tree <- merge_tree(beast_tree, codeml_tree)
-      tree <- fortify(merged_tree)
-      treea1 <- rescale_tree(merged_tree, input$distance)
-      treea2 <- treea1@phylo
-      if (!is.null(input$node)) {
-        if (input$node_number == TRUE) {
-          treea2 <-
-            tree_subset(treea2,
-                        node = as.numeric(input$node),
-                        levels_back = 0)
-          return(treea2)
-        }
-        if (input$label == TRUE) {
-          treea2 <-
-            tree_subset(treea2,
-                        node = as.character(input$node),
-                        levels_back = 8)
-          return(treea2)
-        }
-        
-        return(treea2)
-      }
-      
-    }
-    if (input$fileinput & !is.null(inFile)) {
-      tree <- read.tree(inFile$datapath)
-      if (input$node_number == TRUE) {
-        tree <- tree_subset(tree, as.numeric(input$node), levels_back = 0)
-        return(tree)
-      }
-      if (input$label == TRUE) {
-        tree <-
-          tree_subset(tree,
-                      node = as.character(input$node),
-                      levels_back = 8)
-        return(tree)
-      }
-      
-      return(tree)
-    }
-    
-    
-    return(NULL)
+  
+  
+  
+  up.table <- reactive({
+    df <- data()
+    if (!is.null(df)) {
+      pd <- estimate(df,p=input$pvalue)
+      up.table <- df[pd$up,,drop=F]
+      up.table$category <- rep("up",nrow(up.table))
+      return(up.table)
+    }else{return(NULL)}
+  })
+  down.table <- reactive({
+    df <- data()
+    if (!is.null(df)) {
+      pd <- estimate(df,p=input$pvalue)
+      down.table <- df[pd$down,,drop=F]
+      down.table$category <- rep("down",nrow(down.table))
+      return(down.table)
+    }else{return(NULL)}
   })
   
-  vals <- reactiveValues(
-    keeprows=rep(TRUE, 1),
-    rightkeep=rep(TRUE, 1),
-    upkeep=rep(TRUE, 1),
-    dataTorF=rep(TRUE,1),
-    upval=rep(TRUE,1),
-    downval=rep(TRUE,1),
-    pvalue=NULL
-  )
-  
-  treeData <- reactiveValues(
-    date=c(),
-    divergence=c(),
-    up_labelname=c(),
-    down_labelname=c()
-  )
-  
-  mySetTheme <- function()
-  {
-    mySetTheme <- theme_prism(base_size = 14, border = TRUE)+
-      theme(panel.grid.major = element_line(colour = "grey",
-                                            size = 0.5,
-                                            linetype = "dotted"))+
-      theme(panel.background =  element_rect(fill = "linen", 
-                                             colour = "grey50"))
-    return(mySetTheme)
-  }
-    
-  category <- reactiveValues()
-  abnormal <- reactiveValues()
-  
-  tree_data <- reactive({
-    tree_data <- data.frame(date=treeData$date, divergence=treeData$divergence)
-    row.names(tree_data) <- treeData$tip.label
-    return(tree_data)
+  keep.table <- reactive({
+    df <- data()
+    if (!is.null(df)) {
+      pd <- estimate(df,p=input$pvalue)
+      keep <- pd$up==pd$down
+      keep.table <- df[keep,,drop=F]
+      return(keep.table)
+    }else{return(NULL)}
+  })
+  exclude.table <- reactive({
+    df <- data()
+    if (!is.null(df)) {
+      pd <- estimate(df,p=input$pvalue)
+      keep <- pd$up==pd$down
+      exclude.table <- df[!keep,,drop=F]
+      return(exclude.table)
+    }else{return(NULL)}
   })
   
-  observeEvent(input$fileinput, {
-    tree <- treeda()
-    vals$keeprows <- rep(TRUE, length(tree$tip.label))
-  }) 
   
-  observeEvent(input$plot2_click, {
-    tree_data <- tree_data()
-    res <- nearPoints(tree_data, input$plot2_click, allRows=TRUE)
-    vals$keeprows <- xor(vals$keeprows, res$selected_)
-  })
-  
-  # Toggle points that are brushed, when button is clicked
-  observeEvent(input$exclude_toggle, {
-    tree_data <- tree_data()
-    res <- brushedPoints(tree_data, input$plot2_brush, allRows=TRUE)
-    vals$keeprows <- xor(vals$keeprows, res$selected_)
-  })
-  
-  observeEvent(input$autodele,{
-    vals$keeprows<-vals$dataTorF
-  })
-  
-  # Reset all points
-  observeEvent(input$exclude_reset, {
-    vals$keeprows <- rep(TRUE, length(vals$keeprows))
-  })
-  
-  ##output tree plot by using ggtree
-  output$distplot1 <- renderPlot({    
-    tree <- treeda()
-    if (input$type1) {
-      date <- dateType1(tree, input$order1)
+  output$plot1 <- renderPlot({
+    tree <- tree()
+    if (is.null(tree)) {
+      return()
     }
-    if (input$type2) {
-      date <- dateType2(tree, input$order2, input$prefix)
-    }
-    if (input$type3) {
-      date <- dateType3(tree, input$REGEX)
-    }
-    date <- dateNumeric(date, input$format)
-    divergence <- getdivergence(tree, date, input$method)
-    treeData$date <- date
-    treeData$divergence <- divergence
-    treeData$tip.label <- tree$tip.label
-    tree_data <- tree_data()
-    keep <- tree_data[vals$keeprows, , drop = FALSE]
-    exclude <- tree_data[!vals$keeprows, , drop = FALSE]
-    if(input$xory == "Y")
-    {
-      m <- lm(divergence~date, tree_data)
-    }
-    else
-    {
-      m <- lm(date~divergence, tree_data)
-    }
-    rst <- rstudent(m)
-    if(!isTRUE(input$pvalue == vals$pvalue))
-    {
-      vals$upval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
-                      < input$pvalue / 2 & rst > 0)
-      vals$downval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
-                        < input$pvalue / 2 & rst < 0)
-      vals$dataTorF <- vals$upval==vals$downval
-      vals$pvalue <- input$pvalue
-    }
-    upvalue <- tree_data[vals$upval, ]
-    downvalue <- tree_data[vals$downval,]
-    upvalueHX <- (upvalue$date)^2+upvalue$divergence
-    downvalueHX <- (downvalue$date)^2+downvalue$divergence
-    treeData$up_labelname <- row.names(upvalue)
-    treeData$down_labelname <- row.names(downvalue)
-    keepHX <- (keep$date)^2+keep$divergence
-    vals$upkeep <- keepHX %in% upvalueHX
-    vals$downkeep <- keepHX %in% downvalueHX
-    vals$rightkeep <- vals$upkeep == vals$downkeep
-    wrong_upkeep <- keep[vals$upkeep, , drop = FALSE]
-    wrong_downkeep <- keep[vals$downkeep, , drop = FALSE]
-    true_keep     <- keep[vals$rightkeep, , drop = FALSE]
-    tree_data <- tree_data()
-    all <- tree_data
-    all <- cbind(all, category=vals$keeprows)
-    all <- cbind(label=row.names(all), all)
-    up <- data.frame(label=treeData$up_labelname, 
-                     abnormal=rep("up", length(treeData$up_labelname)))
-    dowm <- data.frame(label=treeData$down_labelname, 
-                       abnormal=rep("dowm", length(treeData$down_labelname)))
-    d <- rbind(up, dowm)
-    dd <- merge(all, d, by="label", all=TRUE)
-    p <- ggtree(tree, color=input$color3, size=input$size)+geom_nodelab(aes(label=node))
-  
-    p1 <- p %<+% dd + geom_tippoint(aes(shape=abnormal), size=2.5, color="red")
+    df <- data()
+    up.table <- up.table()
+    down.table <- down.table()
+    d <- rbind(up.table,down.table)
+    all <- merge(d,df,by='label',all = T)
     if (input$tip) {
-      p2 <- p1 + geom_tiplab(size=input$tipsize)
-      if (input$update_data) {
-        p2 <- p1 + geom_tiplab(size=input$tipsize, aes(col=category))
-      }
-      print(p2)
+      p <- ggtree(tree,color=input$color3, size=input$size) + geom_tiplab()+geom_nodelab(aes(label=node),hjust=-.3)
+      p%<+%all+ geom_tippoint(aes(shape=category,color=category))+
+        geom_tiplab(aes(color=category))
+    }else{
+      p <- ggtree(tree,color=input$color3, size=input$size)+geom_nodelab(aes(label=node),hjust=-.3)
+      p}
+    
+    
+  },height = height)
+  #2.取出日期
+  output$datetable <- renderDataTable({
+    tree <- tree()
+    if (is.null(tree)) {
+      return()
     }
-    else{
-      print(p1)
-    }
-  }, height=height)
+    tree <- tree %>% as.phylo()
+    date <-dateType3(tree = tree,pattern = input$regression)
+    divergence <- getdivergence(tree = tree)
+    df <- cbind(label=tree$tip.label,date=date,divergence=divergence)
+    print(df)
+  })
   
-  output$distPlot2 <- renderPlot({## Root-to-Tip Regression
-    tree <- treeda()
-    if (input$type1) {
-      date <- dateType1(tree, input$order1)
-    }
-    if (input$type2) {
-      date <- dateType2(tree, input$order2, input$prefix)
-    }
-    if (input$type3) {
-      date <- dateType3(tree, input$REGEX)
-    }
-    date <- dateNumeric(date, input$format)
-    divergence <- getdivergence(tree, date, input$method)
-    treeData$date <- date
-    treeData$divergence <- divergence
-    treeData$tip.label <- tree$tip.label
-    tree_data <- tree_data()
-    keep <- tree_data[vals$keeprows, , drop = FALSE]
-    exclude <- tree_data[!vals$keeprows, , drop = FALSE]
-    if(input$xory == "Y")
-    {
-      m <- lm(divergence~date, tree_data)
-    }
-    else
-    {
-      m <- lm(date~divergence, tree_data)
-    }
-    rst <- rstudent(m)
-    if(!isTRUE(input$pvalue == vals$pvalue))
-    {
-      vals$upval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
-                      < input$pvalue / 2 & rst > 0)
-      vals$downval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
-                        < input$pvalue / 2 & rst < 0)
-      vals$dataTorF <- vals$upval==vals$downval
-      vals$pvalue <- input$pvalue
-    }
-    upvalue <- tree_data[vals$upval, ]
-    downvalue <- tree_data[vals$downval,]
-    upvalueHX <- (upvalue$date)^2+upvalue$divergence
-    downvalueHX <- (downvalue$date)^2+downvalue$divergence
-    treeData$up_labelname <- row.names(upvalue)
-    treeData$down_labelname <- row.names(downvalue)
-    # u <- 1
-    # v <- 1
-    # for (i in 1:(length(keep$divergence))) {
-    #   if ((isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
-    #        isTRUE(keep$date[i] == upvalue$date[u]))
-    #       || (isTRUE(keep$divergence[i] == downvalue$divergence[v]) & 
-    #           isTRUE(keep$date[i] == downvalue$date[v]))) {
-    #     vals$rightkeep[i] <- FALSE
-    #     if (isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
-    #         isTRUE(keep$date[i] == upvalue$date[u])) {
-    #       vals$upkeep[i] <- TRUE
-    #       vals$downkeep[i] <- FALSE
-    #       u <- u+1
-    #     }
-    #     else{
-    #       vals$upkeep[i] <- FALSE
-    #       vals$downkeep[i] <- TRUE
-    #       v <- v+1
-    #     }
-    #   }
-    #   else{
-    #     vals$rightkeep[i] <- TRUE
-    #     vals$upkeep[i] <- FALSE
-    #     vals$downkeep[i] <- FALSE
-    #   }
-    # }
-    keepHX <- (keep$date)^2+keep$divergence
-    vals$upkeep <- keepHX %in% upvalueHX
-    vals$downkeep <- keepHX %in% downvalueHX
-    vals$rightkeep <- vals$upkeep == vals$downkeep
-    wrong_upkeep <- keep[vals$upkeep, , drop = FALSE]
-    wrong_downkeep <- keep[vals$downkeep, , drop = FALSE]
-    true_keep     <- keep[vals$rightkeep, , drop = FALSE]
-    p <- ggplot(true_keep,
-                aes(x=date, y=divergence)) + geom_point(color="black") +
-      geom_point(data = wrong_upkeep, color = "red") +
-      geom_point(data = wrong_downkeep, color = "blue") +
-      geom_point(data = exclude, color = "black", alpha = 0.25) 
-    if (input$tip2){
-      p <- p+geom_text(aes(x=date, y=divergence, label = rownames(true_keep)))+
-        geom_text(data=wrong_upkeep, 
-                  aes(x=date, y=divergence, label = rownames(wrong_upkeep)))+
-        geom_text(data=wrong_downkeep, 
-                  aes(x=date, y=divergence, label = rownames(wrong_downkeep)))+
-        geom_text(data=exclude, aes(x=date, y=divergence, 
-                                    label = rownames(exclude)), alpha=0.25)
-    }
-    if (input$update_data) {
-      p2 <- p + geom_smooth(data=keep, aes(x=date, y=divergence), method="lm", 
-                            se=FALSE, colour=input$color2)
-    }
-    else {
-      p2 <- p+geom_smooth(data=tree_data, 
-                          aes(x=date, y=divergence), method="lm",
-                          se=FALSE, colour=input$color2)
-    }
-    p2 <- p2 + mySetTheme() 
-    return(p2)
+  #3.取出divergence，回归分析
+  output$plot2 <- renderPlot({
+    df <- data()
+    up.table <- up.table()
+    down.table <- down.table()
+    ggplot(df, aes(x = date, y = divergence)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+      geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
+      geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      theme_bw() +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
   })
-  output$distPlot3 <- renderPlot({
-    time <- NULL
-    tree_data <- tree_data()
-    keep <- tree_data[vals$keeprows, , drop = FALSE]
-    x <- keep$date
-    y <- keep$divergence
-    fra <- data.frame(time=x, res=y)
-    fra <- meangroup(fra)
-    x <- fra$time
-    y <- fra$res
-    lm3 <- lm(y~x)
-    residuals_3 <- rstudent(lm3)
-    fra$res <- residuals_3
-    p3 <- ggplot(fra,
-                 aes(x=time, y=res)) + geom_point(color="blue") + 
-      geom_line()+labs(title="residuals plot")+mySetTheme()
-    return(p3)
+  output$outliers <- renderDataTable({
+    up.table <- up.table()
+    down.table <- down.table()
+    rbind(up.table,down.table)
   })
-  output$distPlot4 <- renderPlot({
-    time <- NULL
-    lag <- NULL
-    tree_data <- tree_data()
-    keep <- tree_data[vals$keeprows, , drop = FALSE]
-    x <- keep$date
-    y <- keep$divergence 
-    fra <- data.frame(time=x,div=y)
-    fra <- fra[order(fra$time),]
-    x <- fra$time
-    y <- fra$div
-    lm4 <- lm(y~x)
-    residuals_4 <- rstudent(lm4)
-    bacf <- stats::acf(residuals_4)
-    bacf$acf = bacf$acf[-1, , , drop = FALSE]
-    bacf$lag = bacf$lag[-1, , , drop = FALSE]
-    h <- stats::sd(abs(as.numeric(bacf$acf)))*2
-    bacfdf <- with(bacf, data.frame(lag, acf))
-    p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
-      geom_segment(mapping = aes(xend = lag, yend = 0)
-                   , color='black', size = 1,alpha=I(1/2))+
-      geom_hline(yintercept = h, linetype = 2, color = 'darkblue')+
-      geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
-      geom_hline(yintercept = 0, linetype = 1, color = 'black')+
-      labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
-      mySetTheme()
-    print(p4)
-  })
-  output$distPlot5 <- renderPlot({
-    time <- NULL
-    tree_data <- tree_data()
-    keep    <- tree_data[vals$keeprows, , drop = FALSE]
-    x <- keep$date
-    y <- keep$divergence
-    fra <- data.frame(time=x, res=y)
-    lm3 <- lm(y~x)
-    residuals_3 <- rstudent(lm3)
-    fra$res <- residuals_3
-    p5 <-ggplot(fra,aes(sample=res))+
-      stat_qq()+labs(title="Normal Q-Q plot")+mySetTheme()
-    return(p5)
-  })
-  output$distPlot6 <- renderPlot({
-    time <- NULL
-    tree_data <- tree_data()
-    keep <- tree_data[vals$keeprows, , drop = FALSE]
-    x <- keep$date
-    x <- round(x, 1)
-    y <- keep$divergence
-    fra <- data.frame(time=x,res=y)
-    #为丢失的年份设定缺失值
-    q <- seq(from=min(x), to=max(x), 0.1)
-    for (i in q) {
-      if(!i%in%fra$time){
-        addfra <- data.frame(time=i, res=NA)
-        fra <- rbind(fra, addfra)
+  observeEvent(input$delete,{
+    output$plot2 <- renderPlot({
+      exclude.table <- exclude.table()
+      keep.table <- keep.table()
+      ggplot(keep.table, aes(x = date, y = divergence)) +
+        geom_point() +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_point(data = exclude.table, aes(x = date, y = divergence), color = 'gray') +
+        # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+        theme_bw() +
+        stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    })
+    output$plot3 <- renderPlot({
+      need.exclude.table <- need.exclude.table()
+      keep.table <- need.keep.table()
+      ggplot(keep.table, aes_string(x = input$x_var, y = input$y_var)) +
+        geom_point() +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
+        # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+        theme_bw() +
+        stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    })
+    
+    print("here do delete")
+    output$plot1 <- renderPlot({
+      tree <- tree()
+      up.table <- up.table()
+      down.table <- down.table()
+      to_drop <- c(down.table$label,up.table$label)
+      tip_reduced <- drop.tip(tree, to_drop)
+      if (input$tip) {
+        ggtree(tip_reduced) + geom_tiplab()+geom_nodelab(aes(label=node),hjust = -.3)
+      }else{
+        ggtree(tip_reduced)+geom_nodelab(aes(label=node),hjust = -.3)
       }
-    }
-    fra <- meangroup(fra)
-    x <- fra$time
-    y <- fra$res
-    lm6 <- lm(y~x)
-    rsdata <- rstudent(lm6)
-    j <- 1
-    for (i in 1:length(x)) {
-      if(!is.na(fra$res[i])){
-        fra$res[i] <- rsdata[j]
-        j <- j+1
-      }
-    }
-    dwelling <- ts(fra$res, start=min(x), frequency=10)
-    #填补缺失值
-    dwelling <- forecast::na.interp(dwelling)
-    if (input$fmethod == "ARIMA") {
-      p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
-        as.numeric(input$hstep)) %>% ggplot2::autoplot(
-          xlab = "Year", ylab = "residuals"
-        )+mySetTheme()
-    }
-    if (input$fmethod == "ETS") {
-      p<- dwelling %>% forecast::ets() %>% forecast::forecast(
-        as.numeric(input$hstep)) %>% ggplot2::autoplot(
-          xlab = "Year", ylab = "residuals"
-        )+mySetTheme()
-    }
-    print(p)
+      
+    },height = height)
+    
+    
   })
-  output$Summary <- renderTable({  
-    tree <- treeda()
-    if (input$update_data) {
-      tree_data <- tree_data()
-      tree_data_no <- tree_data[!vals$keeprows, , drop = FALSE]
-      dele_label <- row.names(tree_data_no)
-      if (!is.null(dele_label)) {
-        tree <- drop.tip(tree, dele_label)
+  observeEvent(input$reset,{
+    output$plot1 <- renderPlot({
+      tree <- tree()
+      if (is.null(tree)) {
+        return()
       }
-    }
-    if (input$type1) {
-      date <- dateType1(tree, input$order1)
-    }
-    if (input$type2) {
-      date <- dateType2(tree, input$order2, input$prefix)
-    }
-    if (input$type3) {
-      date <- dateType3(tree, input$REGEX)
-    }
-    date <- dateNumeric(date, input$format)
-    divergence <- getdivergence(tree, date, input$method)
-    df <- cbind(divergence, date)
-    if (input$format == "yy" | input$format == "yyyy") {
-      range <- max(date) - min(date)
-    }
-    else{
-      range <- max(date) - min(date)
-      range <- range * 365
-    }
-    ##make a summary and output
-    summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
-                                       "X-Intercept", "Correlation", 
-                                       "R squared", "RSE", "Shapiro-test", 
-                                       "Runs-test"), value=numeric(8))
-    summary[1, 2] <- range
-    summary[4, 2] <- as.numeric(cor(date, divergence))
-    lm.rtt <- lm(df)
-    summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
-    summary[3, 2] <- as.numeric(
-      abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
-    summary[5, 2] <- summary(lm.rtt)$r.squared
-    summary[6, 2] <- summary(lm.rtt)[["sigma"]]
-    summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
-    summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
-    print(summary)
-  },
-  digits = 5, width = 8)
+      df <- data()
+      up.table <- up.table()
+      down.table <- down.table()
+      d <- rbind(up.table,down.table)
+      all <- merge(d,df,by='label',all = T)
+      if (input$tip) {
+        p <- ggtree(tree,color=input$color3, size=input$size) + geom_tiplab()+geom_nodelab(aes(label=node),hjust=-.3)
+        p%<+%all+ geom_tippoint(aes(shape=category,color=category))+
+          geom_tiplab(aes(color=category))
+      }else{
+        p <- ggtree(tree,color=input$color3, size=input$size)+geom_nodelab(aes(label=node),hjust=-.3)
+        p}
+    },height = height)
+    
+    output$plot2 <- renderPlot({
+      df <- data()
+      up.table <- up.table()
+      down.table <- down.table()
+      ggplot(df, aes(x = date, y = divergence)) +
+        geom_point() +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
+        geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+        # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+        theme_bw() +
+        stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    })
+    output$plot3 <- renderPlot({
+      df1 <- merged_data()
+      df <- df1[,c("label",input$x_var,input$y_var)]
+      need.up.table <- need.up.table()
+      need.down.table <- need.down.table()
+      ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
+        geom_point() +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
+        geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+        # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+        theme_bw() +
+        stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    })
+    print("here do reset")
+    
+  })
   
-  output$Sample <- renderTable({
-    tree <- treeda()
-    if (input$type1) {
-      date <- dateType1(tree, input$order1)
-    }
-    if (input$type2) {
-      date <- dateType2(tree, input$order2, input$prefix)
-    }
-    if (input$type3) {
-      date <- dateType3(tree, input$REGEX)
-    }
-    if (!is.character(date)) {
-      frame <- as.data.frame(tree$tip.label)
-      print(frame)
-    }
-    else{
-      frame <- cbind(tree$tip.label, date)
-      colnames(frame) <- c("tip.label", "dates")
-      print(frame)
-    }
-  })
-  output$dataframe <- renderTable({
-    tree <- treeda()
+  output$dataframe <- renderDataTable({
+    tree <- tree()%>%as.phylo()
     #1 set parameters needed
     a = length(tree$tip.label) + 1
     b = length(tree$tip.label) + tree$Nnode
@@ -535,89 +331,153 @@ app_server <- function( input, output, session ) {
     df_td = list()
     model.results <- list()
     modele <- list()
+    
     for (i in a:b) {
-      f = i - a + 1
-      sub.tree[[f]] <-
-        tree_subset(tree = tree,
-                    node = i,
-                    levels_back = 0)
-      if (input$type1) {
-        date[[f]] <-
-          dateType1(tree = sub.tree[[f]], order = input$order1) %>% dateNumeric(format =
-                                                                                  input$format)
-      } else if (input$type2) {
-        date[[f]] <-
-          dateType2(
-            tree = sub.tree[[f]],
-            order = input$order2,
-            prefix = input$prefix
-          ) %>% dateNumeric(format = input$format)
-      } else{
-        date[[f]] <-
-          dateType3(tree = sub.tree[[f]], pattern = input$REGEX) %>% dateNumeric(format =
-                                                                                   input$format)
-      }
-      #date[[f]] <-
-      # dateNumeric(date = date[[f]] , format = format)
-      if (input$type5) {
-        if (Nedge(sub.tree[[f]]) > 3 &
-            length(unique(sub.tree[[f]]$tip.label)) > 5) {
-          divergence[[f]] <- getdivergence(tree = sub.tree[[f]],
-                                           date = date[[f]],
-                                           method = "correlation")
-        } else{
-          divergence[[f]] <- NA
-        }
-      } else{
-        if (Nedge(sub.tree[[f]]) > 9
-            & length(unique(sub.tree[[f]]$tip.label)) > 9) {
-          divergence[[f]] <- getdivergence(tree = sub.tree[[f]],
-                                           date = date[[f]],
-                                           method = "correlation")
-        } else{
-          divergence[[f]] <- NA
-        }
-      }
-      
-      df_td[[f]] <- if (unique(is.na(divergence[[f]]))) {
+      f=i-a+1
+      sub.tree[[f]] <- tree_subset(tree = tree,node = i,levels_back = 0)
+      date[[f]] <- dateType3(sub.tree[[f]],pattern = input$regression) %>% dateNumeric(format = input$format) 
+      divergence[[f]] <- getdivergence(tree = sub.tree[[f]])
+      df_td[[f]] <- as.data.frame(cbind(date=date[[f]],divergence=divergence[[f]]))
+      model.results[[f]] <- if (unique(is.na(divergence[[f]]))) {
         NA
       } else{
-        as.data.frame(cbind(date = date[[f]], divergence = divergence[[f]][, 1]))
-      }
-      model.results[[f]] <-
-        if (unique(is.na(divergence[[f]]))) {
-          NA
-        } else{
-          m <- lm(divergence ~ date, data = df_td[[f]])
-          rst <- rstudent(m)
-          upval <- c((0.5 - abs(pt(
-            rst, m$df.residual
-          ) - 0.5))
-          < 0.05 / 2 & rst > 0)
-          downval <- c((0.5 - abs(pt(
-            rst, m$df.residual
-          ) - 0.5))
-          < 0.05 / 2 & rst < 0)
-          
-          
-          modele <-
-            summary(lm(divergence ~ date, data = df_td[[f]]))
-          data.frame(
-            node = i,
-            r.squared = modele$r.squared,
-            adj.r.squared = modele$adj.r.squared,
-            pvalue = modele$coefficients[nrow(modele$coefficients), ncol(modele$coefficients)],
-            slope = modele$coefficients[nrow(modele$coefficients), 1],
-            intercept = modele$coefficients[1, 1],
-            up = length(which(upval == T)),
-            down = length(which(downval == T)),
-            total_abnormal = length(which(upval == T)) + length(which(downval == T))
-          )
-        }
-    }
+        
+        m <- lm(divergence ~ date, data = df_td[[f]])
+        rst <- rstudent(m)
+        upval <- c((0.5 - abs(pt(
+          rst, m$df.residual
+        ) - 0.5))
+        < input$pvalue/ 2 & rst > 0)
+        downval <- c((0.5 - abs(pt(
+          rst, m$df.residual
+        ) - 0.5))
+        < input$pvalue / 2 & rst < 0)
+        modele <-
+          summary(lm(divergence ~ date, data = df_td[[f]]))
+        data.frame(
+          node = i,
+          r.squared = modele$r.squared,
+          adj.r.squared = modele$adj.r.squared,
+          pvalue = modele$coefficients[nrow(modele$coefficients), ncol(modele$coefficients)],
+          slope = modele$coefficients[nrow(modele$coefficients), 1],
+          intercept = modele$coefficients[1, 1],
+          up = length(which(upval == T)),
+          down = length(which(downval == T)),
+          total_abnormal = length(which(upval == T)) + length(which(downval == T))
+        )
+      }}
     df <- na.omit(do.call(rbind, model.results))
-    
     df[order(df$total_abnormal, decreasing = T), ]
+  })
+  data2 <- reactive({
+    req(input$outdata)
+    read.csv(input$outdata$datapath)
+  })
+  
+  existing_data <-reactive({
+    date <- date()
+    divergence <- divergence()
+    label <- label()
+    df <- data.frame(label=label,divergence=divergence,date=date)
     
-  }, digits = 20)
+    return(df)
+  })
+  
+  merged_data <- reactive({
+    req(data2())
+    # 将上传的表格与现有的表格合并
+    if (!is.null(data2())) {
+      existing_data <- existing_data()
+      merged <- merge(existing_data, data2())
+      merged
+    } else {
+      
+    }
+  })
+  observeEvent(merged_data(), {
+    updateSelectInput(session, "x_var", choices = colnames(merged_data()))
+    updateSelectInput(session, "y_var", choices = colnames(merged_data()))
+  })
+  
+  output$data_table <- renderDataTable({
+    req(merged_data())
+    merged_data()
+  })
+  regression <- reactive({
+    req(input$regression_btn)
+    lm(as.formula(paste(input$y_var, "~", input$x_var)), merged_data())
+  })
+  estimate2 <- function(lm,p){
+    rst <- rstudent(lm)
+    down <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p / 2&rst<0
+    up <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p/ 2&rst>0
+    return(list(down=down,up=up))}
+  need.up.table <- reactive({
+    df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    if (!is.null(df)) {
+      lm=regression()
+      pd <- estimate2(lm=lm,p=input$pvalue)
+      up.table <- df[pd$up,,drop=F]
+      up.table$category <- rep("up",nrow(up.table))
+      return(up.table)
+    }else{return(NULL)}
+  })
+  
+  need.down.table <- reactive({
+    df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    if (!is.null(df)) {
+      lm=regression()
+      pd <- estimate2(lm=lm,p=input$pvalue)
+      up.table <- df[pd$down,,drop=F]
+      up.table$category <- rep("down",nrow(up.table))
+      return(up.table)
+    }else{return(NULL)}
+  })
+  need.keep.table <- reactive({
+    df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    if (!is.null(df)) {
+      lm=regression()
+      pd <- estimate2(lm=lm,p=input$pvalue)
+      keep <- pd$up==pd$down
+      keep.table <- df[keep,,drop=F]
+      return(keep.table)
+    }else{return(NULL)}
+  })
+  need.exclude.table <- reactive({
+    df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    if (!is.null(df)) {
+      lm=regression()
+      pd <- estimate2(lm=lm,p=input$pvalue)
+      keep <- pd$up==pd$down
+      exclude.table <- df[!keep,,drop=F]
+      return(exclude.table)
+    }else{return(NULL)}
+  })
+  
+  
+  output$plot3 <- renderPlot({
+    df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    need.up.table <- need.up.table()
+    need.down.table <- need.down.table()
+    ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      theme_bw() +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+  })
+  
+  output$outliers2 <- renderDataTable({
+    need.up.table <- need.up.table()
+    need.down.table <- need.down.table()
+    rbind(need.up.table,need.down.table)
+  })
+  
 }
