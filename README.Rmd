@@ -27,7 +27,7 @@ devtools::install_github("YuLab-SMU/shinyTempSignal")
 
 ```
 library(shinyTempSignal)
-run_app()
+run_shinyTempSignal()
 ```
 # Reference
 ***G Yu***,Tommy Tsan-Yuk Lam,Shuangbin Xu,Yonghe Xia, Justin Silverman, Bradley Jones, Watal M. Iwasaki,Ruizhu Huang.ggtree:an R package for visualization of tree and annotation data.

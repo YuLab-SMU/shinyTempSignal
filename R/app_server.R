@@ -179,7 +179,7 @@ app_server <- function( input, output, session )  {
   output$plot1 <- renderPlot({
     tree <- tree()
     if (is.null(tree)) {
-      return()
+      return(NULL)
     }
     df <- data()
     up.table <- up.table()
@@ -211,12 +211,16 @@ app_server <- function( input, output, session )  {
   
   #3.取出divergence，回归分析
   output$plot2 <- renderPlot({
+    tree <- tree()
+    if (is.null(tree)) {
+      return()
+    }
     df <- data()
     up.table <- up.table()
     down.table <- down.table()
     ggplot(df, aes(x = date, y = divergence)) +
       geom_point() +
-      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
       geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
@@ -234,7 +238,7 @@ app_server <- function( input, output, session )  {
       keep.table <- keep.table()
       ggplot(keep.table, aes(x = date, y = divergence)) +
         geom_point() +
-        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = exclude.table, aes(x = date, y = divergence), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
         theme_bw() +
@@ -245,7 +249,7 @@ app_server <- function( input, output, session )  {
       keep.table <- need.keep.table()
       ggplot(keep.table, aes_string(x = input$x_var, y = input$y_var)) +
         geom_point() +
-        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
         theme_bw() +
@@ -295,7 +299,7 @@ app_server <- function( input, output, session )  {
       down.table <- down.table()
       ggplot(df, aes(x = date, y = divergence)) +
         geom_point() +
-        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
         geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
@@ -309,7 +313,7 @@ app_server <- function( input, output, session )  {
       need.down.table <- need.down.table()
       ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
         geom_point() +
-        geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+        geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
         geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
@@ -321,7 +325,11 @@ app_server <- function( input, output, session )  {
   })
   
   output$dataframe <- renderDataTable({
-    tree <- tree()%>%as.phylo()
+    tree <- tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+    tree <- tree%>%as.phylo()
     #1 set parameters needed
     a = length(tree$tip.label) + 1
     b = length(tree$tip.label) + tree$Nnode
@@ -466,7 +474,7 @@ app_server <- function( input, output, session )  {
     need.down.table <- need.down.table()
     ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_point() +
-      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
       geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
