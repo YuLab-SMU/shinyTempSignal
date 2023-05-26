@@ -11,7 +11,7 @@ app_ui <- function(request) {
   tagList(
     dashboardPage(
       skin="yellow",
-      dashboardHeader(title = "phylogentic"),
+      dashboardHeader(title = "shinyTempSignal"),
       dashboardSidebar(
         radioButtons(inputId = "filetype",
                      "choose your file type",
@@ -29,7 +29,7 @@ app_ui <- function(request) {
         actionButton("fileinput","submit"),
         sidebarMenu(
           menuItem("Sample Dates", tabName="Dates"),
-          menuItem("Subtree_regression_integration",tabName = "node"),
+          menuItem("Subtree_regression_intergration",tabName = "node"),
           menuItem("tree-structure",tabName = "tree"),
           menuItem("Root-to-tip",tabName = "regression"),
           menuItem("out_data_analysis", tabName="out")
@@ -73,7 +73,7 @@ app_ui <- function(request) {
                   box(width = 4,
                       selectInput("x_var","please choose your x var",choices = NULL),
                       selectInput("y_var","please choose your Y var",choices = NULL),
-                      actionButton("regression_btn","regression_anylysis")),
+                      actionButton("regression_btn","regression_analysis")),
                   box(dataTableOutput("data_table"),width = 12),
                   box(dataTableOutput("outliers2"),width = 12)
           )
