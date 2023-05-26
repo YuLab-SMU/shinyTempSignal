@@ -179,7 +179,7 @@ app_server <- function( input, output, session )  {
   output$plot1 <- renderPlot({
     tree <- tree()
     if (is.null(tree)) {
-      return()
+      return(NULL)
     }
     df <- data()
     up.table <- up.table()
@@ -211,6 +211,10 @@ app_server <- function( input, output, session )  {
   
   #3.取出divergence，回归分析
   output$plot2 <- renderPlot({
+    tree <- tree()
+    if (is.null(tree)) {
+      return()
+    }
     df <- data()
     up.table <- up.table()
     down.table <- down.table()
@@ -321,7 +325,11 @@ app_server <- function( input, output, session )  {
   })
   
   output$dataframe <- renderDataTable({
-    tree <- tree()%>%as.phylo()
+    tree <- tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+    tree <- tree%>%as.phylo()
     #1 set parameters needed
     a = length(tree$tip.label) + 1
     b = length(tree$tip.label) + tree$Nnode
