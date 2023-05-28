@@ -17,9 +17,10 @@ app_ui <- function(request) {
                      "choose your file type",
                      choiceNames = list("Newick","beast","NEXUS","phylip"),
                      choiceValues = list("Newick","beast","NEXUS","phylip")),
-        fileInput("treefile","choose your tree file"),
-        fileInput("outdata","choose your corresponding out-data"),
-        textInput("regression","a regression expression to match your date"),
+        fileInput("treefile","choose your tree file (necessary)"),
+        #tags$h4("This file is ",tags$strong("not necessary"),"."),
+        fileInput("outdata","choose your corresponding external data(not necessary)"),
+        textInput("regression","a regrular expression to match your date"),
         selectInput("format", 
                     "Dates format:", 
                     c("yy", "yyyy", "yyyy-MM-dd", "MM-dd-yyyy", 
@@ -32,13 +33,18 @@ app_ui <- function(request) {
           menuItem("Subtree_regression_intergration",tabName = "node"),
           menuItem("tree-structure",tabName = "tree"),
           menuItem("Root-to-tip",tabName = "regression"),
-          menuItem("out_data_analysis", tabName="out")
+          menuItem("out_data_analysis", tabName="out"),
+          menuItem("subtree_outdata__regression_intergration",tabName = "out_data_regression")
         )
       ),
       dashboardBody(
         tabItems(
-          tabItem(tabName = "Dates",dataTableOutput("datetable")),
-          tabItem(tabName = "node",dataTableOutput("dataframe")),
+          tabItem(tabName = "Dates",dataTableOutput("datetable"),
+                  downloadButton("download1","download")),
+          tabItem(tabName = "node",dataTableOutput("dataframe"),
+                  downloadButton("download2.table","download")),
+          tabItem(tabName = "out_data_regression",dataTableOutput("out_dataframe"),
+                  downloadButton("download3.table","download")),
           tabItem(tabName = "tree",
                   
                   
