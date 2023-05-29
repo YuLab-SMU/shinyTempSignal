@@ -206,8 +206,19 @@ app_server <- function( input, output, session )  {
     date <-dateType3(tree = tree,pattern = input$regression)
     divergence <- getdivergence(tree = tree)
     df <- cbind(label=tree$tip.label,date=date,divergence=divergence)
-    print(df)
+    table1(df)
+    df
   })
+  table1 <- reactiveVal()
+  output$download1 <- downloadHandler(
+    filename = function(){
+      "Sample-Dates.csv"
+    },
+    content = function(file){
+      df <- table1()
+      write.csv(df,file,row.names = FALSE)
+    }
+  )
   
   #3.取出divergence，回归分析
   output$plot2 <- renderPlot({
@@ -364,6 +375,7 @@ app_server <- function( input, output, session )  {
           summary(lm(divergence ~ date, data = df_td[[f]]))
         data.frame(
           node = i,
+          tip.number=Ntip(sub.tree[[f]]),
           r.squared = modele$r.squared,
           adj.r.squared = modele$adj.r.squared,
           pvalue = modele$coefficients[nrow(modele$coefficients), ncol(modele$coefficients)],
@@ -372,11 +384,26 @@ app_server <- function( input, output, session )  {
           up = length(which(upval == T)),
           down = length(which(downval == T)),
           total_abnormal = length(which(upval == T)) + length(which(downval == T))
+          
         )
       }}
     df <- na.omit(do.call(rbind, model.results))
-    df[order(df$total_abnormal, decreasing = T), ]
+    dd <- df[order(df$total_abnormal, decreasing = T), ]
+    table2(dd)
+    dd
   })
+ table2 <- reactiveVal()
+  
+  output$ download2.table <- downloadHandler(
+    filename = function(){
+      "Subtree_regression_intergration.csv"
+    },
+    content = function(file){
+      df <- table2()
+      write.csv(df,file,row.names = FALSE)
+    }
+  )
+  
   data2 <- reactive({
     req(input$outdata)
     read.csv(input$outdata$datapath)
@@ -396,7 +423,7 @@ app_server <- function( input, output, session )  {
     # 将上传的表格与现有的表格合并
     if (!is.null(data2())) {
       existing_data <- existing_data()
-      merged <- merge(existing_data, data2())
+      merged <- merge(existing_data, data2()) %>%unique() %>% na.omit()
       merged
     } else {
       
@@ -487,5 +514,81 @@ app_server <- function( input, output, session )  {
     need.down.table <- need.down.table()
     rbind(need.up.table,need.down.table)
   })
+  
+  output$out_dataframe <- renderDataTable({
+    tree <- tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+    if (is.null(data2())) {
+      return(NULL)
+    }
+    tree <- tree%>%as.phylo()
+    data2 <- data2()
+    a = length(tree$tip.label) + 1
+    b = length(tree$tip.label) + tree$Nnode
+    sub.tree <- list()
+    divergence <- list()
+    label <- list()
+    df_td1 = list()
+    df_td2=list()
+    model.results <- list()
+    modele <- list()
+    for (i in a:b) {
+      f=i-a+1
+      sub.tree[[f]] <- tree_subset(tree = tree,node = i,levels_back = 0)
+      divergence[[f]] <- getdivergence(tree = sub.tree[[f]])
+      label[[f]] <-sub.tree[[f]]$tip.label
+      df_td1[[f]] <- data.frame(label=label[[f]],divergence=divergence[[f]])
+      
+      df_td2[[f]] <-if (unique(is.na(divergence[[f]]))) {
+        NA
+      }else{
+        merge(data2,df_td1[[f]]) %>% unique()
+      }
+      pd <- unique(df_td2[[f]][1]) %>% unlist() %>% as.vector()
+      model.results[[f]] <- if (is.na(pd[1])) {
+        NA
+      }else{
+        m <- lm(as.formula(paste(input$y_var, "~", input$x_var)),df_td2[[f]])
+        rst <- rstudent(m)
+        upval <- c((0.5 - abs(pt(
+          rst, m$df.residual
+        ) - 0.5))
+        < input$pvalue/ 2 & rst > 0)
+        downval <- c((0.5 - abs(pt(
+          rst, m$df.residual
+        ) - 0.5))
+        < input$pvalue / 2 & rst < 0)
+        modele <-
+          summary(lm(as.formula(paste(input$y_var, "~", input$x_var)),df_td2[[f]]))
+        data.frame(
+          node = i,
+          tip.number=Ntip(sub.tree[[f]]),
+          r.squared = modele$r.squared,
+          adj.r.squared = modele$adj.r.squared,
+          pvalue = modele$coefficients[nrow(modele$coefficients), ncol(modele$coefficients)],
+          slope = modele$coefficients[nrow(modele$coefficients), 1],
+          intercept = modele$coefficients[1, 1],
+          up = length(which(upval == T)),
+          down = length(which(downval == T)),
+          total_abnormal = length(which(upval == T)) + length(which(downval == T))
+        )
+      }}
+    df <- na.omit(do.call(rbind, model.results))
+    dd <- df[order(df$total_abnormal, decreasing = T), ]
+    table3(dd)
+    dd
+  })
+  table3 <- reactiveVal()
+  output$download3.table <- downloadHandler(
+    filename = function(){
+      "out_data__regression_intergration.csv"
+    },
+    content = function(file){
+      df <- table3()
+      write.csv(df,file,row.names = FALSE)
+    }
+  )
   
 }
