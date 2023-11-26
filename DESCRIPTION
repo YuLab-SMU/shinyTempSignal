@@ -26,6 +26,7 @@ Imports:
     shinydashboard,
     shinyjs,
     stringr,
+    tidytree,
     treeio,
     ggpmisc
 Suggests:

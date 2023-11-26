@@ -18,7 +18,7 @@
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
-#' @importFrom treeio tree_subset
+#' @importFrom tidytree tree_subset
 #' @importFrom treeio read.phylip.tree
 #' @importFrom forecast forecast
 #' @importFrom stats cor
@@ -34,6 +34,7 @@
 #' @importFrom stats as.formula
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom utils read.csv
+#' @importFrom utils write.csv
 #' @noRd
 app_server <- function( input, output, session )  {
   category <- ..eq.label.. <- ..rr.label.. <- NULL
