@@ -38,7 +38,6 @@ Suggests:
     htmltools,
     processx,
     testthat (>= 3.0.0),
-    thinkr
 Encoding: UTF-8
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3
