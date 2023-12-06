@@ -37,7 +37,7 @@
 #' @importFrom utils write.csv
 #' @noRd
 
-app_server <- function(input, output, session)  {
+app_server <- function( input, output, session )  {
   # tree <- eventReactive(input$fileinput, {
   #     infile <- input$treefile
   #     if (!is.null(infile)) {
@@ -87,12 +87,16 @@ app_server <- function(input, output, session)  {
   options(shiny.maxRequestSize = 4000*1024^2)
   category <- ..eq.label.. <- ..rr.label.. <- NULL
   observeEvent(input$plotClick, {
+  if(!is.null(sub_tree())) {
+    tree <- sub_tree()
+  } else {
     tree <- tree()
-    p <- ggtree(tree)
+  }
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none")
     x <- as.numeric(input$plotClick$x)
     y <- as.numeric(input$plotClick$y)
     node <- click_node(x, y, p$data)
-    updateTextInput(session,"node",value = as.numeric(node))
+    updateTextInput(session,"node",value = node)
   })
   click_node <- function(x, y, tr) {
     sq_dx <- (x - tr$x)^2
@@ -101,36 +105,39 @@ app_server <- function(input, output, session)  {
     node <- tr$node[i]
     return(node)
   }
-  #1.读入树文件
-  tree <- reactive({
-    infile <- input$treefile
-    if (!is.null(infile)) {
-      if (input$filetype=="Newick") {
-        tree <- read.tree(infile$datapath) %>% as.phylo()
-      } else if (input$filetype=="beast") {
-        tree <- read.beast(infile$datapath) %>% as.phylo()
-      } else if (input$filetype=="Nexus") {
-        tree <- read.nexus(infile$datapath)
-      } else if (input$filetype=="phylip") {
-        tree <- read.phylip.tree(infile$datapath) %>% as.phylo()
+  sub_tree <- eventReactive(
+    input$node, {
+      if(input$node != "") {
+        extract.clade(tree(), node = as.numeric(input$node))
+      } else {
+        tree()
       }
-
-      if (input$node != "") {
-
-        if (as.numeric(input$node)<length(as.phylo(tree)$tip.label)) {
-          stop("it is a tip label")
-        }else{
-          tree <- extract.clade(tree,node = as.numeric(input$node))#tree_subset(tree,as.numeric(input$node),levels_back = 0)
-        }
-      }
-      return(tree)
-    } else {
-      return(NULL)
     }
+  )
+  #1.读入树文件
+  tree <- eventReactive(input$fileinput, {
+    req(!is.null(input$treefile))
+    if (input$filetype=="Newick") {
+      tree <- read.tree(input$treefile$datapath) %>% as.phylo()
+    } else if (input$filetype=="beast") {
+      tree <- read.beast(input$treefile$datapath) %>% as.phylo()
+    } else if (input$filetype=="Nexus") {
+      tree <- read.nexus(input$treefile$datapath)
+    } else if (input$filetype=="phylip") {
+      tree <- read.phylip.tree(input$treefile$datapath) %>% as.phylo()
+    }
+    tree
   })
+  observeEvent(
+    tree(), {
+      tree <- tree()
+      root_node <- length(tree$tip.label) + 1
+      updateTextInput(session, "node", value = root_node)
+    }
+  )
   #全部在外面取出来不就好了
   data <- reactive({
-    tree <- tree()
+    tree <- sub_tree()
     if (!is.null(tree)){
       tree <- tree %>% as.phylo()
       date <-dateType3(tree = tree,pattern = input$regression)
@@ -144,7 +151,7 @@ app_server <- function(input, output, session)  {
     
   })
   date <- reactive({
-    tree <- tree()
+    tree <- sub_tree()
     if (!is.null(tree)){
       tree <- tree %>% as.phylo()
       date <-dateType3(tree = tree,pattern = input$regression)
@@ -155,7 +162,7 @@ app_server <- function(input, output, session)  {
     }
   })
   label <-reactive({
-    tree <- tree()
+    tree <- sub_tree()
     if (!is.null(tree)){
       tree <- tree %>% as.phylo()
       label <-tree$tip.label
@@ -166,7 +173,7 @@ app_server <- function(input, output, session)  {
   }) 
   
   divergence <- reactive({
-    tree <- tree()
+    tree <- sub_tree()
     if (!is.null(tree)){
       divergence <- getdivergence(tree = tree)
       return(divergence)
@@ -226,7 +233,7 @@ app_server <- function(input, output, session)  {
   
   
   output$plot1 <- renderPlot({
-    tree <- tree()
+    tree <- sub_tree()
     if (is.null(tree)) {
       return(NULL)
     }
@@ -267,7 +274,7 @@ app_server <- function(input, output, session)  {
   
   #2.取出日期
   output$datetable <- renderDataTable({
-    tree <- tree()
+    tree <- sub_tree()
     if (is.null(tree)) {
       return()
     }
@@ -291,7 +298,7 @@ app_server <- function(input, output, session)  {
   
   #3.取出divergence，回归分析
   output$plot2 <- renderPlot({
-    tree <- tree()
+    tree <- sub_tree()
     if (is.null(tree)) {
       return()
     }
@@ -420,7 +427,7 @@ app_server <- function(input, output, session)  {
     
     print("here do delete")
     output$plot1 <- renderPlot({
-      tree <- tree()
+      tree <- sub_tree()
       up.table <- up.table()
       down.table <- down.table()
       to_drop <- c(down.table$label,up.table$label)
@@ -648,7 +655,7 @@ app_server <- function(input, output, session)  {
     )
     
     output$plot1 <- renderPlot({
-      tree <- tree()
+      tree <- sub_tree()
       if (is.null(tree)) {
         return()
       }
@@ -893,7 +900,7 @@ app_server <- function(input, output, session)  {
 
   
   output$dataframe <- renderDataTable({
-    tree <- tree()
+    tree <- sub_tree()
     if (is.null(tree)) {
       return(NULL)
     }
@@ -1085,7 +1092,7 @@ app_server <- function(input, output, session)  {
   })
   
   output$out_dataframe <- renderDataTable({
-    tree <- tree()
+    tree <- sub_tree()
     if (is.null(tree)) {
       return(NULL)
     }
