@@ -4,7 +4,7 @@ Version: 0.0.4
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
-          person(given = "Xiao", family = "Luo", email = "l77880853349@163.com", role  = "ctb"),
+          person(given = "Xiao", family = "Luo", email = "l77880853349@163.com", role  = "ctb"),       
           person(given = "Li", family = "Zhan", email = "smu18575877413@gmail.com", role  = "ctb"),
           person(given = "Xuanan", family = "Zhu", email = "1063785553@qq.com", role = "aut"),
           person(given = "Jianfeng", family = "Lin", email = "415186984@qq.com", role = "ctb")

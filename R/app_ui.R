@@ -16,8 +16,8 @@ app_ui <- function(request) {
         radioButtons(
           inputId = "filetype",
           "choose your file type",
-          choiceNames = list("Newick", "beast", "NEXUS", "phylip"),
-          choiceValues = list("Newick", "beast", "NEXUS", "phylip")
+          choiceNames = list("Newick", "NEXUS","Beast", "Phylip"),
+          choiceValues = list("Newick", "NEXUS","Beast",  "Phylip")
         ),
         fileInput("treefile", "choose a tree file"),
         textInput("regression", "Regular expression to extract sampling date from tip labels"),
@@ -42,13 +42,13 @@ app_ui <- function(request) {
         ),
         actionButton("fileinput", "submit"),
         sidebarMenu(
+           menuItem("Tree structure exploration", tabName = "tree"),
           menuItem("Sample Dates", tabName = "Dates"),
-          menuItem("Subtree_regression_intergration", tabName = "node"),
-          menuItem("tree-structure", tabName = "tree"),
-          menuItem("Root-to-tip", tabName = "regression"),
+          menuItem("Temporal signal analysis", tabName = "regression"),
+          menuItem("Subtree Temporal signal", tabName = "node"),
          # menuItem("Time_Series_Analysis", tabName = "time"),
-          menuItem("out_data_analysis", tabName = "out"),
-          menuItem("subtree_outdata__regression_intergration", tabName = "out_data_regression")
+          menuItem("Phylogenetic signal", tabName = "out"),
+          menuItem("Subtree phylogenetic signal", tabName = "out_data_regression")
         )
       ),
       dashboardBody(

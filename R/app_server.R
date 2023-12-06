@@ -18,7 +18,7 @@
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
-#' @importFrom tidytree tree_subset
+#' @importFrom ape extract.clade
 #' @importFrom treeio read.phylip.tree
 #' @importFrom forecast forecast
 #' @importFrom stats cor
@@ -36,7 +36,55 @@
 #' @importFrom utils read.csv
 #' @importFrom utils write.csv
 #' @noRd
-app_server <- function( input, output, session )  {
+
+app_server <- function(input, output, session)  {
+  # tree <- eventReactive(input$fileinput, {
+  #     infile <- input$treefile
+  #     if (!is.null(infile)) {
+  #       if (input$filetype=="Newick") {
+  #         tree <- read.tree(infile$datapath) %>% as.phylo()
+  #       } else if (input$filetype=="beast") {
+  #         tree <- read.beast(infile$datapath) %>% as.phylo()
+  #       } else if (input$filetype=="Nexus") {
+  #         tree <- read.nexus(infile$datapath)
+  #       } else if (input$filetype=="phylip") {
+  #         tree <- read.phylip.tree(infile$datapath) %>% as.phylo()
+  #       }
+        
+  #       if (input$node != "") {
+          
+  #         if (as.numeric(input$node)<length(as.phylo(tree)$tip.label)) {
+  #           stop("it is a tip label")
+  #         }else{
+  #           tree <- extract.clade(tree,node = as.numeric(input$node))#tree_subset(tree,as.numeric(input$node),levels_back = 0)
+  #         }
+  #       }
+  #       return(tree)
+  #     } else {
+  #       return(NULL)
+  #     }
+  #   })
+  mySetTheme <- function()
+  {
+    mySetTheme <- theme_prism(base_size = 14, border = TRUE) +
+      theme(panel.grid.major = element_line(
+        colour = "grey",
+        size = 0.5,
+        linetype = "dotted"
+      )) +
+      theme(panel.background =  element_rect(fill = "linen",
+                                             colour = "grey50"))
+    return(mySetTheme)
+  }
+  mySetTheme2 <- function()
+  {
+    mySetTheme <- 
+    theme(panel.background =  element_rect(fill = "linen",
+                                             colour = "grey50"))
+    return(mySetTheme)
+  }
+  
+  options(shiny.maxRequestSize = 4000*1024^2)
   category <- ..eq.label.. <- ..rr.label.. <- NULL
   observeEvent(input$plotClick, {
     tree <- tree()
@@ -44,7 +92,7 @@ app_server <- function( input, output, session )  {
     x <- as.numeric(input$plotClick$x)
     y <- as.numeric(input$plotClick$y)
     node <- click_node(x, y, p$data)
-    updateTextInput(session,"node",value = node)
+    updateTextInput(session,"node",value = as.numeric(node))
   })
   click_node <- function(x, y, tr) {
     sq_dx <- (x - tr$x)^2
@@ -66,13 +114,13 @@ app_server <- function( input, output, session )  {
       } else if (input$filetype=="phylip") {
         tree <- read.phylip.tree(infile$datapath) %>% as.phylo()
       }
-      
+
       if (input$node != "") {
-        
+
         if (as.numeric(input$node)<length(as.phylo(tree)$tip.label)) {
           stop("it is a tip label")
         }else{
-          tree <- tree_subset(tree,as.numeric(input$node),levels_back = 0)
+          tree <- extract.clade(tree,node = as.numeric(input$node))#tree_subset(tree,as.numeric(input$node),levels_back = 0)
         }
       }
       return(tree)
@@ -187,16 +235,36 @@ app_server <- function( input, output, session )  {
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
-      p <- ggtree(tree,color=input$color3, size=input$size) + geom_tiplab()+geom_nodelab(aes(label=node),hjust=-.3)
-      p%<+%all+ geom_tippoint(aes(shape=category,color=category))+
-        geom_tiplab(aes(color=category))
-    }else{
-      p <- ggtree(tree,color=input$color3, size=input$size)+geom_nodelab(aes(label=node),hjust=-.3)
-      p}
-    
-    
-  },height = height)
+      
+      p <- p+ geom_tiplab(size=input$tipsize)
+      p <- p%<+%all+geom_tiplab(aes(color=category))+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }else if(input$tip_point){
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+        geom_tippoint(aes(color=category),size=input$tipsize)+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }
+    plotd1(p)
+    p
+  },height = height
+  )
+  plotd1 <- reactiveVal()
+  output$downloadplot1 <- downloadHandler(
+    filename = function() {
+      "tree_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd1()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+  
+ 
+  
   #2.取出日期
   output$datetable <- renderDataTable({
     tree <- tree()
@@ -230,43 +298,125 @@ app_server <- function( input, output, session )  {
     df <- data()
     up.table <- up.table()
     down.table <- down.table()
-    ggplot(df, aes(x = date, y = divergence)) +
+    p <- ggplot(df, aes(x = date, y = divergence)) +
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
       geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      theme_bw() +
+      mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    plotd2(p)
+    print(p)
   })
+  plotd2 <- reactiveVal()
+  output$downloadplot2 <- downloadHandler(
+    filename = function() {
+      "regression_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd2()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+  
   output$outliers <- renderDataTable({
     up.table <- up.table()
     down.table <- down.table()
     rbind(up.table,down.table)
   })
   observeEvent(input$delete,{
+    
+    output$Summary <- renderTable({  
+      keep <- keep.table()
+      date <- keep$date|> unlist()|>as.numeric()
+      divergence <-  keep$divergence|>unlist()|>as.numeric()
+      df <- cbind(divergence, date)|>as.data.frame()
+      if (input$format == "yy" | input$format == "yyyy") {
+        range <- max(date) - min(date)
+      }
+      else{
+        range <- max(date) - min(date)
+        range <- range * 365
+      }
+      ##make a summary and output
+      summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(6))
+      summary[1, 2] <- range
+      summary[4, 2] <- as.numeric(cor(date, divergence))
+      lm.rtt <- lm(df)
+      summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+      summary[3, 2] <- as.numeric(
+        abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+      summary[5, 2] <- summary(lm.rtt)$r.squared
+      summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+      # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+      # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+      table_dt(summary)
+      print(summary)
+    },
+    digits = 5, width = 8)
+    
+    table_dt <- reactiveVal()
+    output$download_dt2 <- downloadHandler(
+      filename = function(){
+        "summary(delete).csv"
+      },
+      content = function(file){
+        df <- table_dt()
+        write.csv(df,file,row.names = FALSE)
+      }
+    )
     output$plot2 <- renderPlot({
       exclude.table <- exclude.table()
       keep.table <- keep.table()
-      ggplot(keep.table, aes(x = date, y = divergence)) +
+      p <- ggplot(keep.table, aes(x = date, y = divergence)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = exclude.table, aes(x = date, y = divergence), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
+        mySetTheme() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      plotd2(p)
+      print(p)
     })
+    plotd2 <- reactiveVal()
+    
+    output$downloadplot2 <- downloadHandler(
+      filename = function() {
+        "regression(deleted_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd2()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
     output$plot3 <- renderPlot({
       need.exclude.table <- need.exclude.table()
       keep.table <- need.keep.table()
-      ggplot(keep.table, aes_string(x = input$x_var, y = input$y_var)) +
+      p <- ggplot(keep.table, aes_string(x = input$x_var, y = input$y_var)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
+        mySetTheme() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      plotd3(p)
+      print(p)
     })
+    plotd3 <- reactiveVal()
+    
+    output$downloadplot3 <- downloadHandler(
+      filename = function() {
+        "regression(deleted)_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd3()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
     
     print("here do delete")
     output$plot1 <- renderPlot({
@@ -275,17 +425,228 @@ app_server <- function( input, output, session )  {
       down.table <- down.table()
       to_drop <- c(down.table$label,up.table$label)
       tip_reduced <- drop.tip(tree, to_drop)
+      p <- ggtree(tip_reduced,color=input$color3, size=input$size)+mySetTheme2() 
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       if (input$tip) {
-        ggtree(tip_reduced) + geom_tiplab()+geom_nodelab(aes(label=node),hjust = -.3)
+        p <- p+ geom_tiplab(size=input$tipsize)
+      }else if(input$tip_point){
+        if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+        p <- p+ geom_tippoint(size=input$tipsize,color="gray")+
+          geom_tippoint(size=input$tipsize)
+        print(p)
       }else{
-        ggtree(tip_reduced)+geom_nodelab(aes(label=node),hjust = -.3)
+        p <- p
       }
-      
+      plotd1(p)
+      print(p)
     },height = height)
+    plotd1 <- reactiveVal()
+    output$downloadplot1 <- downloadHandler(
+      filename = function() {
+        "tree_plot(delete).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd1()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
     
+    output$plot8 <- renderPlot({
+      time <- NULL
+      keep <- keep.table()
+      x <- keep$date|> unlist()|>as.numeric()
+      y <- keep$divergence|>unlist()|>as.numeric()
+      fra <- data.frame(time=x, res=y)
+      lm3 <- lm(y~x)
+      residuals_3 <- rstudent(lm3)
+      fra$res <- residuals_3
+      p5 <-ggplot(fra,aes(sample=res))+
+        stat_qq()+labs(title="Normal Q-Q plot")+mySetTheme()#+mySetTheme()
+      plotd8(p5)
+      return(p5)
+      
+    })
+    plotd8 <- reactiveVal()
+    
+    output$downloadplot8 <- downloadHandler(
+      filename = function() {
+        "QQ_plot(delete).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd8()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
+    output$plot9 <- renderPlot({
+      time <- NULL
+      keep <- keep.table()
+      x <- keep$date|> unlist()|>as.numeric()
+      y <- keep$divergence|>unlist()|>as.numeric()
+      fra <- data.frame(time=x, res=y)
+      fra <- meangroup(fra)
+      x <- fra$time
+      y <- fra$res
+      lm3 <- lm(y~x)
+      residuals_3 <- rstudent(lm3)
+      fra$res <- residuals_3
+      p3 <- ggplot(fra,
+                   aes(x=time, y=res)) + geom_point(color="blue") + 
+        geom_line()+labs(title="residuals plot")+mySetTheme()
+      plotd9(p3)
+      return(p3)
+    })
+    plotd9 <- reactiveVal()
+    
+    output$downloadplot9 <- downloadHandler(
+      filename = function() {
+        "residual_plot(delete).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd9()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    output$plot10 <- renderPlot({
+      time <- NULL
+      lag <- NULL
+      keep <- keep.table()
+      x <- keep$date|> unlist()|>as.numeric()
+      y <- keep$divergence|>unlist()|>as.numeric()
+      fra <- data.frame(time=x,div=y)
+      fra <- fra[order(fra$time),]
+      x <- fra$time
+      y <- fra$div
+      lm4 <- lm(y~x)
+      residuals_4 <- rstudent(lm4)
+      bacf <- stats::acf(residuals_4)
+      bacf$acf = bacf$acf[-1, , , drop = FALSE]
+      bacf$lag = bacf$lag[-1, , , drop = FALSE]
+      h <- stats::sd(abs(as.numeric(bacf$acf)))*2
+      bacfdf <- with(bacf, data.frame(lag, acf))
+      p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
+        geom_segment(mapping = aes(xend = lag, yend = 0)
+                     , color='black', size = 1,alpha=I(1/2))+
+        geom_hline(yintercept = h, linetype = 2, color = 'darkblue')+
+        geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
+        geom_hline(yintercept = 0, linetype = 1, color = 'black')+
+        labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
+        mySetTheme()
+      plotd10(p4)
+      print(p4)
+    })
+    
+    plotd10<- reactiveVal()
+    
+    output$downloadplot10 <- downloadHandler(
+      filename = function() {
+        "ACF_plot(delete).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd10()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
+    output$plot11 <- renderPlot({
+      time <- NULL
+      keep <- keep.table()
+      x <- keep$date|> unlist()|>as.numeric()
+      y <- keep$divergence|>unlist()|>as.numeric()
+      fra <- data.frame(time=x, res=y)
+      #为丢失的年份设定缺失值
+      q <- seq(from=min(x), to=max(x), 0.1)
+      for (i in q) {
+        if(!i%in%fra$time){
+          addfra <- data.frame(time=i, res=NA)
+          fra <- rbind(fra, addfra)
+        }
+      }
+      fra <- meangroup(fra)
+      x <- fra$time
+      y <- fra$res
+      lm6 <- lm(y~x)
+      rsdata <- rstudent(lm6)
+      j <- 1
+      for (i in 1:length(x)) {
+        if(!is.na(fra$res[i])){
+          fra$res[i] <- rsdata[j]
+          j <- j+1
+        }
+      }
+      dwelling <- ts(fra$res, start=min(x), frequency=10)
+      #填补缺失值
+      dwelling <- forecast::na.interp(dwelling)
+      if (input$fmethod == "ARIMA") {
+        p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
+          as.numeric(input$hstep)) %>% ggplot2::autoplot(
+            xlab = "Year", ylab = "residuals"
+          )+mySetTheme()
+      }
+      if (input$fmethod == "ETS") {
+        p<- dwelling %>% forecast::ets() %>% forecast::forecast(
+          as.numeric(input$hstep)) %>% ggplot2::autoplot(
+            xlab = "Year", ylab = "residuals"
+          )+mySetTheme()
+      }
+      plotd11(p)
+      print(p)
+    })
+    plotd11<- reactiveVal()
+    
+    output$downloadplot11 <- downloadHandler(
+      filename = function() {
+        "predict_plot(delete).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd11()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
     
   })
   observeEvent(input$reset,{
+    output$Summary <- renderTable({  
+      date <- date()|> unlist()|>as.numeric()
+      divergence <- divergence()|>unlist()|>as.numeric()
+      df <- cbind(divergence, date)|>as.data.frame()
+      if (input$format == "yy" | input$format == "yyyy") {
+        range <- max(date) - min(date)
+      }
+      else{
+        range <- max(date) - min(date)
+        range <- range * 365
+      }
+      ##make a summary and output
+      summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(6))
+      summary[1, 2] <- range
+      summary[4, 2] <- as.numeric(cor(date, divergence))
+      lm.rtt <- lm(df)
+      summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+      summary[3, 2] <- as.numeric(
+        abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+      summary[5, 2] <- summary(lm.rtt)$r.squared
+      summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+      # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+      # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+      table_dt(summary)
+      print(summary)
+    },
+    digits = 5, width = 8)
+    
+    table_dt <- reactiveVal()
+    output$download_dt2 <- downloadHandler(
+      filename = function(){
+        "summary(reset).csv"
+      },
+      content = function(file){
+        df <- table_dt()
+        write.csv(df,file,row.names = FALSE)
+      }
+    )
+    
     output$plot1 <- renderPlot({
       tree <- tree()
       if (is.null(tree)) {
@@ -296,45 +657,240 @@ app_server <- function( input, output, session )  {
       down.table <- down.table()
       d <- rbind(up.table,down.table)
       all <- merge(d,df,by='label',all = T)
+      p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none")  
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       if (input$tip) {
-        p <- ggtree(tree,color=input$color3, size=input$size) + geom_tiplab()+geom_nodelab(aes(label=node),hjust=-.3)
-        p%<+%all+ geom_tippoint(aes(shape=category,color=category))+
-          geom_tiplab(aes(color=category))
-      }else{
-        p <- ggtree(tree,color=input$color3, size=input$size)+geom_nodelab(aes(label=node),hjust=-.3)
-        p}
+      
+        p <- p%<+%all+geom_tiplab(aes(color=category),size=input$tipsize)+
+          scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        print(p)
+      }else if(input$tip_point){
+        p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+          geom_tippoint(aes(color=category),size=input$tipsize)+
+          scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        print(p)
+      } else{
+        print(p)}
+      plotd1(p)
+      print(p)
     },height = height)
+    plotd1 <- reactiveVal()
+    output$downloadplot1 <- downloadHandler(
+      filename = function() {
+        "tree_plot(reset).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd1()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    output$plot8 <- renderPlot({
+      time <- NULL
+      x <- date()|> unlist()|>as.numeric()
+      y <- divergence()|>unlist()|>as.numeric()
+      fra <- data.frame(time=x, res=y)
+      lm3 <- lm(y~x)
+      residuals_3 <- rstudent(lm3)
+      fra$res <- residuals_3
+      p5 <-ggplot(fra,aes(sample=res))+
+        stat_qq()+labs(title="Normal Q-Q plot")+mySetTheme()#+mySetTheme()
+      plotd8(p5)
+      return(p5)
+      
+    })
+    plotd8 <- reactiveVal()
+    
+    output$downloadplot8 <- downloadHandler(
+      filename = function() {
+        "QQ_plot(reset).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd8()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
+    output$plot9 <- renderPlot({
+      time <- NULL
+      x <- date()|> unlist()|>as.numeric()
+      y <- divergence()|>unlist()|>as.numeric()
+      fra <- data.frame(time=x, res=y)
+      fra <- meangroup(fra)
+      x <- fra$time
+      y <- fra$res
+      lm3 <- lm(y~x)
+      residuals_3 <- rstudent(lm3)
+      fra$res <- residuals_3
+      p3 <- ggplot(fra,
+                   aes(x=time, y=res)) + geom_point(color="blue") + 
+        geom_line()+labs(title="residuals plot")+mySetTheme()
+      plotd9(p3)
+      return(p3)
+    })
+    plotd9 <- reactiveVal()
+    
+    output$downloadplot9 <- downloadHandler(
+      filename = function() {
+        "residual_plot(reset).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd9()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    output$plot10 <- renderPlot({
+      time <- NULL
+      lag <- NULL
+      x <- date()|> unlist()|>as.numeric()
+      y <- divergence()|>unlist()|>as.numeric()
+      fra <- data.frame(time=x,div=y)
+      fra <- fra[order(fra$time),]
+      x <- fra$time
+      y <- fra$div
+      lm4 <- lm(y~x)
+      residuals_4 <- rstudent(lm4)
+      bacf <- stats::acf(residuals_4)
+      bacf$acf = bacf$acf[-1, , , drop = FALSE]
+      bacf$lag = bacf$lag[-1, , , drop = FALSE]
+      h <- stats::sd(abs(as.numeric(bacf$acf)))*2
+      bacfdf <- with(bacf, data.frame(lag, acf))
+      p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
+        geom_segment(mapping = aes(xend = lag, yend = 0)
+                     , color='black', size = 1,alpha=I(1/2))+
+        geom_hline(yintercept = h, linetype = 2, color = 'darkblue')+
+        geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
+        geom_hline(yintercept = 0, linetype = 1, color = 'black')+
+        labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
+        mySetTheme()
+      plotd10(p4)
+      print(p4)
+    })
+    plotd10<- reactiveVal()
+    
+    output$downloadplot10 <- downloadHandler(
+      filename = function() {
+        "ACF_plot(reset).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd10()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
+    
+    output$plot11 <- renderPlot({
+      time <- NULL
+      x <- date()|> unlist()|>as.numeric()
+      y <- divergence()|>unlist()|>as.numeric()
+      fra <- data.frame(time=x, res=y)
+      #为丢失的年份设定缺失值
+      q <- seq(from=min(x), to=max(x), 0.1)
+      for (i in q) {
+        if(!i%in%fra$time){
+          addfra <- data.frame(time=i, res=NA)
+          fra <- rbind(fra, addfra)
+        }
+      }
+      fra <- meangroup(fra)
+      x <- fra$time
+      y <- fra$res
+      lm6 <- lm(y~x)
+      rsdata <- rstudent(lm6)
+      j <- 1
+      for (i in 1:length(x)) {
+        if(!is.na(fra$res[i])){
+          fra$res[i] <- rsdata[j]
+          j <- j+1
+        }
+      }
+      dwelling <- ts(fra$res, start=min(x), frequency=10)
+      #填补缺失值
+      dwelling <- forecast::na.interp(dwelling)
+      if (input$fmethod == "ARIMA") {
+        p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
+          as.numeric(input$hstep)) %>% ggplot2::autoplot(
+            xlab = "Year", ylab = "residuals"
+          )+mySetTheme()
+      }
+      if (input$fmethod == "ETS") {
+        p<- dwelling %>% forecast::ets() %>% forecast::forecast(
+          as.numeric(input$hstep)) %>% ggplot2::autoplot(
+            xlab = "Year", ylab = "residuals"
+          )+mySetTheme()
+      }
+      plotd11(p)
+      print(p)
+    })
+    plotd11<- reactiveVal()
+    
+    output$downloadplot11 <- downloadHandler(
+      filename = function() {
+        "predict_plot(reset).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd11()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
     
     output$plot2 <- renderPlot({
       df <- data()
       up.table <- up.table()
       down.table <- down.table()
-      ggplot(df, aes(x = date, y = divergence)) +
+      p <- ggplot(df, aes(x = date, y = divergence)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
         geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
+        mySetTheme() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      plotd2(p)
+      print(p)
     })
+    plotd2 <- reactiveVal()
+    output$downloadplot2 <- downloadHandler(
+      filename = function() {
+        "regression_plot(reset).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd2()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
     output$plot3 <- renderPlot({
       df1 <- merged_data()
       df <- df1[,c("label",input$x_var,input$y_var)]
       need.up.table <- need.up.table()
       need.down.table <- need.down.table()
-      ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
+      p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
         geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
+        mySetTheme() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      plotd3(p)
+      print(p)
     })
+    
     print("here do reset")
     
+    plotd3 <- reactiveVal()
+    
+    output$downloadplot3 <- downloadHandler(
+      filename = function() {
+        "regression(external_data_(reset))_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd3()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
   })
+
   
   output$dataframe <- renderDataTable({
     tree <- tree()
@@ -354,7 +910,7 @@ app_server <- function( input, output, session )  {
     
     for (i in a:b) {
       f=i-a+1
-      sub.tree[[f]] <- tree_subset(tree = tree,node = i,levels_back = 0)
+      sub.tree[[f]] <- extract.clade(tree,node = i)
       date[[f]] <- dateType3(sub.tree[[f]],pattern = input$regression) %>% dateNumeric(format = input$format) 
       divergence[[f]] <- getdivergence(tree = sub.tree[[f]])
       df_td[[f]] <- as.data.frame(cbind(date=date[[f]],divergence=divergence[[f]]))
@@ -411,10 +967,10 @@ app_server <- function( input, output, session )  {
   })
   
   existing_data <-reactive({
-    date <- date()
+    date <- date() %>% as.numeric()
     divergence <- divergence()
     label <- label()
-    df <- data.frame(label=label,divergence=divergence,date=date)
+    df <- data.frame(label=label,divergence=divergence,date=date %>% as.numeric())
     
     return(df)
   })
@@ -424,7 +980,7 @@ app_server <- function( input, output, session )  {
     # 将上传的表格与现有的表格合并
     if (!is.null(data2())) {
       existing_data <- existing_data()
-      merged <- merge(existing_data, data2()) %>%unique() %>% na.omit()
+      merged <- merge(existing_data, data2(),all.x=TRUE) %>%unique() %>% na.omit()
       merged
     } else {
       
@@ -500,16 +1056,28 @@ app_server <- function( input, output, session )  {
     df <- df1[,c("label",input$x_var,input$y_var)]
     need.up.table <- need.up.table()
     need.down.table <- need.down.table()
-    ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
+    p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
       geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      theme_bw() +
+      mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    plotd3(p)
+    print(p)
   })
+  plotd3 <- reactiveVal()
   
+  output$downloadplot3 <- downloadHandler(
+    filename = function() {
+      "regression(external_data)_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd3()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
   output$outliers2 <- renderDataTable({
     need.up.table <- need.up.table()
     need.down.table <- need.down.table()
@@ -537,7 +1105,7 @@ app_server <- function( input, output, session )  {
     modele <- list()
     for (i in a:b) {
       f=i-a+1
-      sub.tree[[f]] <- tree_subset(tree = tree,node = i,levels_back = 0)
+      sub.tree[[f]] <- extract.clade(tree,node = i)
       divergence[[f]] <- getdivergence(tree = sub.tree[[f]])
       label[[f]] <-sub.tree[[f]]$tip.label
       df_td1[[f]] <- data.frame(label=label[[f]],divergence=divergence[[f]])
@@ -592,4 +1160,199 @@ app_server <- function( input, output, session )  {
     }
   )
   
+  output$plot8 <- renderPlot({
+    time <- NULL
+    x <- date()|> unlist()|>as.numeric()
+    y <- divergence()|>unlist()|>as.numeric()
+    fra <- data.frame(time=x, res=y)
+    lm3 <- lm(y~x)
+    residuals_3 <- rstudent(lm3)
+    fra$res <- residuals_3
+    p5 <-ggplot(fra,aes(sample=res))+
+      stat_qq()+labs(title="Normal Q-Q plot")+mySetTheme()#+mySetTheme()
+    plotd8(p5)
+    return(p5)
+    
+  })
+  plotd8 <- reactiveVal()
+  
+  output$downloadplot8 <- downloadHandler(
+    filename = function() {
+      "QQ_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd8()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+  output$plot9 <- renderPlot({
+    time <- NULL
+    x <- date()|> unlist()|>as.numeric()
+    y <- divergence()|>unlist()|>as.numeric()
+    fra <- data.frame(time=x, res=y)
+    fra <- meangroup(fra)
+    x <- fra$time
+    y <- fra$res
+    lm3 <- lm(y~x)
+    residuals_3 <- rstudent(lm3)
+    fra$res <- residuals_3
+    p3 <- ggplot(fra,
+                 aes(x=time, y=res)) + geom_point(color="blue") + 
+      geom_line()+labs(title="residuals plot")+mySetTheme()
+    plotd9(p3)
+    return(p3)
+  })
+  
+  plotd9 <- reactiveVal()
+  
+  output$downloadplot9 <- downloadHandler(
+    filename = function() {
+      "residual_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd9()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+  
+  
+    output$plot10 <- renderPlot({
+      time <- NULL
+      lag <- NULL
+      x <- date()|> unlist()|>as.numeric()
+      y <- divergence()|>unlist()|>as.numeric()
+      fra <- data.frame(time=x,div=y)
+      fra <- fra[order(fra$time),]
+      x <- fra$time
+      y <- fra$div
+      lm4 <- lm(y~x)
+      residuals_4 <- rstudent(lm4)
+      bacf <- stats::acf(residuals_4)
+      bacf$acf = bacf$acf[-1, , , drop = FALSE]
+      bacf$lag = bacf$lag[-1, , , drop = FALSE]
+      h <- stats::sd(abs(as.numeric(bacf$acf)))*2
+      bacfdf <- with(bacf, data.frame(lag, acf))
+      p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
+        geom_segment(mapping = aes(xend = lag, yend = 0)
+                     , color='black', size = 1,alpha=I(1/2))+
+        geom_hline(yintercept = h, linetype = 2, color = 'darkblue')+
+        geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
+        geom_hline(yintercept = 0, linetype = 1, color = 'black')+
+        labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
+        mySetTheme()
+      plotd10(p4)
+      print(p4)
+    })
+    plotd10<- reactiveVal()
+    
+    output$downloadplot10 <- downloadHandler(
+      filename = function() {
+        "ACF_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd10()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
+    
+    output$plot11 <- renderPlot({
+      time <- NULL
+      x <- date()|> unlist()|>as.numeric()
+      y <- divergence()|>unlist()|>as.numeric()
+      fra <- data.frame(time=x, res=y)
+      #为丢失的年份设定缺失值
+      q <- seq(from=min(x), to=max(x), 0.1)
+      for (i in q) {
+        if(!i%in%fra$time){
+          addfra <- data.frame(time=i, res=NA)
+          fra <- rbind(fra, addfra)
+        }
+      }
+      fra <- meangroup(fra)
+      x <- fra$time
+      y <- fra$res
+      lm6 <- lm(y~x)
+      rsdata <- rstudent(lm6)
+      j <- 1
+      for (i in 1:length(x)) {
+        if(!is.na(fra$res[i])){
+          fra$res[i] <- rsdata[j]
+          j <- j+1
+        }
+      }
+      dwelling <- ts(fra$res, start=min(x), frequency=10)
+      #填补缺失值
+      dwelling <- forecast::na.interp(dwelling)
+      if (input$fmethod == "ARIMA") {
+        p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
+          as.numeric(input$hstep)) %>% ggplot2::autoplot(
+            xlab = "Year", ylab = "residuals"
+          )+mySetTheme()
+      }
+      if (input$fmethod == "ETS") {
+        p<- dwelling %>% forecast::ets() %>% forecast::forecast(
+          as.numeric(input$hstep)) %>% ggplot2::autoplot(
+            xlab = "Year", ylab = "residuals"
+          )+mySetTheme()
+      }
+      plotd11(p)
+      print(p)
+    })
+    
+    plotd11<- reactiveVal()
+    
+    output$downloadplot11 <- downloadHandler(
+      filename = function() {
+        "predict_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd11()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
+    
+    output$Summary <- renderTable({  
+      date <- date()|> unlist()|>as.numeric()
+      divergence <- divergence()|>unlist()|>as.numeric()
+      df <- cbind(divergence, date)|>as.data.frame()
+      if (input$format == "yy" | input$format == "yyyy") {
+        range <- max(date) - min(date)
+      }
+      else{
+        range <- max(date) - min(date)
+        range <- range * 365
+      }
+      ##make a summary and output
+      summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(6))
+      summary[1, 2] <- range
+      summary[4, 2] <- as.numeric(cor(date, divergence))
+      lm.rtt <- lm(df)
+      summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+      summary[3, 2] <- as.numeric(
+        abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+      summary[5, 2] <- summary(lm.rtt)$r.squared
+      summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+      # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+      # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+      table_dt(summary)
+      print(summary)
+    },
+    digits = 5, width = 8)
+    
+    table_dt <- reactiveVal()
+    output$download_dt2 <- downloadHandler(
+      filename = function(){
+        "summary.csv"
+      },
+      content = function(file){
+        df <- table_dt()
+        write.csv(df,file,row.names = FALSE)
+      }
+    )
+    
 }
+
