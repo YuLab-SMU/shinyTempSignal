@@ -36,7 +36,7 @@ dateNumeric <- function(date, format) {
   return(date)
 }
 
-getdivergence <- function(tree, date, method) {
+getdivergence <- function(tree) {
   ## Root a Tree by Root-to-Tip Regression
   #tree2 <- rtt(tree, date, objective=method)
   tree2 <- tree
@@ -57,5 +57,19 @@ getdivergence <- function(tree, date, method) {
   return(divergence)
 }
 
+get_new_divergence <- function(tree,node){
+dataset <- cbind(tree$edge,tree$edge.length)|>as.data.frame()
+names(dataset) <- c("from", "to", "length")
+len <- 0
+a <- nodepath(tree,from = length(tree$tip.label)+1,to=node)
+if(node==length(tree$tip.label)+1){
+  return(0)
+}else{
+for(i in 1:(length(a)-1)){
+
+tem_len <- dataset[,3][dataset[,1]==a[i]&dataset[,2]==a[i+1]]
+len <- len+tem_len
+}
+return(len)}}
 
 

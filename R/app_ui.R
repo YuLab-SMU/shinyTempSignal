@@ -69,36 +69,6 @@ app_ui <- function(request) {
             downloadButton("download3.table", "download")
           ),
           tabItem(
-            tabName = "time",
-            box(
-              plotOutput("plot8"),
-              width = 6,
-              downloadButton("downloadplot8", "download")
-            ),
-            
-            box(
-              plotOutput("plot9"),
-              width = 6,
-              downloadButton("downloadplot9", "download")
-            ),
-            
-            box(
-              plotOutput("plot10"),
-              width = 6,
-              downloadButton("downloadplot10", "download")
-            ),
-            
-            box(
-              plotOutput("plot11"),
-              width = 6,
-              downloadButton("downloadplot11", "download"),
-              selectInput("fmethod", "method:",
-                          c("ETS", "ARIMA")),
-              textInput("hstep",
-                        "h:", value = "120")
-            ),
-          ),
-          tabItem(
             tabName = "tree",
             
             
@@ -124,6 +94,12 @@ app_ui <- function(request) {
               sliderInput("tipsize",
                           "tiplab_size:",
                           0, 10, 3, step = 0.1),
+              radioButtons(
+          inputId = "choose_analysis",
+          "choose the point to displsy in the tree",
+          choiceNames = list("only_tree","Temporal_signal", "Phylogenetic_signal"),
+          choiceValues = list("only_tree","Temporal_signal", "Phylogenetic_signal")
+        )
               
             )
             
@@ -136,6 +112,7 @@ app_ui <- function(request) {
               downloadButton("downloadplot2", "download"),
               actionButton("delete", "autodel"),
               actionButton("reset", "Reset"),
+              checkboxInput("plot_all", "plot whole tree regression", TRUE),
               fluidRow(column(
                 6, numericInput("pvalue", "pvalue<:",
                                 value = "0.05")
@@ -161,14 +138,22 @@ app_ui <- function(request) {
             box(
               width = 8,
               plotOutput("plot3"),
-              downloadButton("downloadplot3", "download")
+              downloadButton("downloadplot3", "download"),
+              fluidRow(actionButton("delete2", "autodel"),
+              actionButton("reset2", "Reset")),
+              fluidRow(
+                column(3,selectInput("x_var", "please choose your x var", choices = NULL),),
+                column(3, selectInput("y_var", "please choose your Y var", choices = NULL),),
+                column(3,actionButton("regression_btn", "regression_analysis")),
+                column(3,checkboxInput("plot_all2", "plot whole tree regression", TRUE)))
             ),
             
             box(
               width = 4,
-              selectInput("x_var", "please choose your x var", choices = NULL),
-              selectInput("y_var", "please choose your Y var", choices = NULL),
-              actionButton("regression_btn", "regression_analysis")
+              tableOutput("Summary2"),
+              downloadButton("download_dt_2", "download")
+             
+              
             ),
             box(dataTableOutput("data_table"), width = 12),
             box(dataTableOutput("outliers2"), width = 12)
