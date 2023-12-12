@@ -79,6 +79,12 @@ mySetTheme <- function()
     node <- tr$node[i]
     return(node)
   }
+ observeEvent(input$temp_node,
+  updateTextInput(session,"node",value=input$temp_node)
+ )
+ observeEvent(input$phylo_node,
+  updateTextInput(session,"node",value=input$phylo_node)
+ )
   sub_tree <- eventReactive(
     input$node, {
       if(input$node != "") {
@@ -408,6 +414,8 @@ observeEvent(input$reset2,{
   
   
   output$plot1 <- renderPlot({
+    # browser()
+    req(sub_tree())
   if (input$choose_analysis=="Temporal_signal") {
     tree <- sub_tree()
     if (is.null(tree)) {
@@ -536,6 +544,7 @@ observeEvent(input$reset2,{
   })
   #3.取出divergence，回归分析
   output$plot2 <- renderPlot({
+    # browser()
   df1 <- data2_1()
   sub_divergence <- sub_divergence()
   p_all <- ggplot(df1, aes(x = date, y = divergence)) +
