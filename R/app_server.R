@@ -18,7 +18,7 @@
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
-#' @importFrom tidytree tree_subset
+#' @importFrom ape extract.clade
 #' @importFrom treeio read.phylip.tree
 #' @importFrom forecast forecast
 #' @importFrom stats cor
@@ -36,11 +36,37 @@
 #' @importFrom utils read.csv
 #' @importFrom utils write.csv
 #' @noRd
-app_server <- function( input, output, session )  {
+
+app_server <- function(input, output, session)  {
+mySetTheme <- function()
+  {
+    mySetTheme <- theme_prism(base_size = 14, border = TRUE) +
+      theme(panel.grid.major = element_line(
+        colour = "grey",
+        size = 0.5,
+        linetype = "dotted"
+      )) +
+      theme(panel.background =  element_rect(fill = "linen",
+                                             colour = "grey50"))
+    return(mySetTheme)
+  }
+  mySetTheme2 <- function()
+  {
+    mySetTheme <- 
+    theme(panel.background =  element_rect(fill = "linen",
+                                             colour = "grey50"))
+    return(mySetTheme)
+  }
+  
+  options(shiny.maxRequestSize = 4000*1024^2)
   category <- ..eq.label.. <- ..rr.label.. <- NULL
   observeEvent(input$plotClick, {
+  if(!is.null(sub_tree())) {
+    tree <- sub_tree()
+  } else {
     tree <- tree()
-    p <- ggtree(tree)
+  }
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none")
     x <- as.numeric(input$plotClick$x)
     y <- as.numeric(input$plotClick$y)
     node <- click_node(x, y, p$data)
@@ -53,36 +79,48 @@ app_server <- function( input, output, session )  {
     node <- tr$node[i]
     return(node)
   }
-  #1.读入树文件
-  tree <- reactive({
-    infile <- input$treefile
-    if (!is.null(infile)) {
-      if (input$filetype=="Newick") {
-        tree <- read.tree(infile$datapath) %>% as.phylo()
-      } else if (input$filetype=="beast") {
-        tree <- read.beast(infile$datapath) %>% as.phylo()
-      } else if (input$filetype=="Nexus") {
-        tree <- read.nexus(infile$datapath)
-      } else if (input$filetype=="phylip") {
-        tree <- read.phylip.tree(infile$datapath) %>% as.phylo()
+  sub_tree <- eventReactive(
+    input$node, {
+      if(input$node != "") {
+        tree <- tree()
+        check_node <- as.numeric(input$node)<length(as.phylo(tree)$tip.label)
+        req(!check_node)
+        extract.clade(tree(), node = as.numeric(input$node))
+      } else {
+        tree()
       }
-      
-      if (input$node != "") {
-        
-        if (as.numeric(input$node)<length(as.phylo(tree)$tip.label)) {
-          stop("it is a tip label")
-        }else{
-          tree <- tree_subset(tree,as.numeric(input$node),levels_back = 0)
-        }
-      }
-      return(tree)
-    } else {
-      return(NULL)
     }
+  )
+
+  sub_divergence <- eventReactive(
+    input$node,{
+      tree <- tree()
+      get_new_divergence(tree=tree,node=as.numeric(input$node))
+    })
+  #1.读入树文件
+  tree <- eventReactive(input$fileinput, {
+    req(!is.null(input$treefile))
+    if (input$filetype=="Newick") {
+      tree <- read.tree(input$treefile$datapath) %>% as.phylo()
+    } else if (input$filetype=="beast") {
+      tree <- read.beast(input$treefile$datapath) %>% as.phylo()
+    } else if (input$filetype=="Nexus") {
+      tree <- read.nexus(input$treefile$datapath)
+    } else if (input$filetype=="phylip") {
+      tree <- read.phylip.tree(input$treefile$datapath) %>% as.phylo()
+    }
+    tree
   })
+  observeEvent(
+    tree(), {
+      tree <- tree()
+      root_node <- length(tree$tip.label) + 1
+      updateTextInput(session, "node", value = root_node)
+    }
+  )
   #全部在外面取出来不就好了
   data <- reactive({
-    tree <- tree()
+     tree <- sub_tree()
     if (!is.null(tree)){
       tree <- tree %>% as.phylo()
       date <-dateType3(tree = tree,pattern = input$regression)
@@ -96,7 +134,7 @@ app_server <- function( input, output, session )  {
     
   })
   date <- reactive({
-    tree <- tree()
+     tree <- sub_tree()
     if (!is.null(tree)){
       tree <- tree %>% as.phylo()
       date <-dateType3(tree = tree,pattern = input$regression)
@@ -106,8 +144,9 @@ app_server <- function( input, output, session )  {
       return(NULL)
     }
   })
+
   label <-reactive({
-    tree <- tree()
+     tree <- sub_tree()
     if (!is.null(tree)){
       tree <- tree %>% as.phylo()
       label <-tree$tip.label
@@ -118,7 +157,7 @@ app_server <- function( input, output, session )  {
   }) 
   
   divergence <- reactive({
-    tree <- tree()
+     tree <- sub_tree()
     if (!is.null(tree)){
       divergence <- getdivergence(tree = tree)
       return(divergence)
@@ -126,6 +165,25 @@ app_server <- function( input, output, session )  {
       return(NULL)
     }
   })
+divergence_all <- reactive({
+     tree <- tree()
+    if (!is.null(tree)){
+      divergence <- getdivergence(tree = tree)
+      return(divergence)
+    }else{
+      return(NULL)
+    }
+  })
+label_all<-reactive({
+     tree <- tree()
+    if (!is.null(tree)){
+      tree <- tree %>% as.phylo()
+      label <-tree$tip.label
+      return(label)
+    }else{
+      return(NULL)
+    }
+  }) 
   height <- reactive({
     return(input$height)
   })
@@ -134,10 +192,182 @@ app_server <- function( input, output, session )  {
   down <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p / 2&rst<0
   up <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p/ 2&rst>0
   return(list(down=down,up=up))}
+
+ observeEvent(input$reset,{
+  tree <- tree()
+  reset_root_node <- length(tree$tip.label)+1
+  updateTextInput(session,"node",value = reset_root_node)
+})
+ observeEvent(input$reset2,{
+  tree <- tree()
+  reset_root_node <- length(tree$tip.label)+1
+  updateTextInput(session,"node",value = reset_root_node)
+})
+
+observeEvent(input$reset2,{
+    output$Summary2 <- renderTable({  
+      df1 <- merged_data()
+      df <- df1[,c("label",input$x_var,input$y_var)]
+       lm.rtt <- lm(as.formula(paste(input$y_var, "~", input$x_var)), merged_data())
+       summary <- data.frame(Dated.tips=c( "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(5))
+       summary[1, 2] <- as.numeric(lm.rtt$coefficients[2])
+        summary[2, 2] <- as.numeric(
+       abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+       summary[3, 2] <- as.numeric(cor(df[,input$x_var], df[,input$y_var]))
+       summary[4, 2] <- summary(lm.rtt)$r.squared
+       summary[5, 2] <- summary(lm.rtt)[["sigma"]]
+       print(summary)
+    })
+  output$plot1 <- renderPlot({
+  if (input$choose_analysis=="Temporal_signal") {
+    tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+    df <- data()
+    up.table <- up.table()
+    down.table <- down.table()
+    d <- rbind(up.table,down.table)
+    all <- merge(d,df,by='label',all = T)
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {
+      
+      p <- p+ geom_tiplab(size=input$tipsize)
+      p <- p%<+%all+geom_tiplab(aes(color=category))+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }else if(input$tip_point){
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+        geom_tippoint(aes(color=category),size=input$tipsize)+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }
+    plotd1(p)
+    p
+    } else if (input$choose_analysis=="Phylogenetic_signal") {
+      tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+
+      df1 <- merged_data()
+      df <- df1[,c("label",input$x_var,input$y_var)]
+      up.table <- need.up.table()
+      down.table <- need.down.table() 
+    
+    d <- rbind(up.table,down.table)
+    all <- merge(d,df,by='label',all = T)
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {
+      
+      p <- p+ geom_tiplab(size=input$tipsize)
+      p <- p%<+%all+geom_tiplab(aes(color=category))+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }else if(input$tip_point){
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+        geom_tippoint(aes(color=category),size=input$tipsize)+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }
+    plotd1(p)
+    p
+
+    }else if(input$choose_analysis=="only_tree"){
+       tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {  
+      p <- p+ geom_tiplab(size=input$tipsize)
+    }else if(input$tip_point){
+      if(input$geom_nodelab){
+        p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p+geom_tippoint(size=input$tipsize)
+    }
+    plotd1(p)
+    p
+    }
+
+    
+  },height = height
+  )
+  plotd1 <- reactiveVal()
+  output$downloadplot1 <- downloadHandler(
+    filename = function() {
+      "tree_plot_reset.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd1()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+  output$plot3 <- renderPlot({
+      # browser()
+    df1_1 <- merged_data2()
+    df1_2 <- df1_1[,c("label",input$x_var,input$y_var)]
+  sub_divergence <- sub_divergence()
+  # x <- as.character(input$x_var)
+  # y  <- as.character()
+  p_all2 <- ggplot(df1_1, mapping = aes_string(x=input$x_var ,y=input$y_var)) +
+      geom_point(colour="gray") +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour="gray")
+  #  browser()
+  if(input$plot_all2){
+    df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    # df[,"divergence"] <- df[,"divergence"]+sub_divergence()
+    need.up.table <- need.up.table()
+   
+    need.down.table <- need.down.table()
+
+    p <- p_all2+
+      geom_point(data=df, aes_string(x = input$x_var, y =input$y_var)) +
+      geom_smooth(data=df, aes_string(x = input$x_var, y =input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      mySetTheme() +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    plotd3(p)
+    print(p)
+  }else {
+      df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    need.up.table <- need.up.table()
+    need.down.table <- need.down.table()
+    p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      mySetTheme() +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    plotd3(p)
+    print(p)
+  }
+  })
   
-  
-  
-  
+    plotd3 <- reactiveVal()
+    
+    output$downloadplot3 <- downloadHandler(
+      filename = function() {
+        "regression(external_data_(reset))_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd3()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+})
+
+
   up.table <- reactive({
     df <- data()
     if (!is.null(df)) {
@@ -178,7 +408,8 @@ app_server <- function( input, output, session )  {
   
   
   output$plot1 <- renderPlot({
-    tree <- tree()
+  if (input$choose_analysis=="Temporal_signal") {
+    tree <- sub_tree()
     if (is.null(tree)) {
       return(NULL)
     }
@@ -187,19 +418,88 @@ app_server <- function( input, output, session )  {
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
-      p <- ggtree(tree,color=input$color3, size=input$size) + geom_tiplab()+geom_nodelab(aes(label=node),hjust=-.3)
-      p%<+%all+ geom_tippoint(aes(shape=category,color=category))+
-        geom_tiplab(aes(color=category))
-    }else{
-      p <- ggtree(tree,color=input$color3, size=input$size)+geom_nodelab(aes(label=node),hjust=-.3)
-      p}
+      
+      p <- p+ geom_tiplab(size=input$tipsize)
+      p <- p%<+%all+geom_tiplab(aes(color=category))+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }else if(input$tip_point){
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+        geom_tippoint(aes(color=category),size=input$tipsize)+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }
+    plotd1(p)
+    p
+    } else if (input$choose_analysis=="Phylogenetic_signal") {
+      tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+
+      df1 <- merged_data()
+      df <- df1[,c("label",input$x_var,input$y_var)]
+      up.table <- need.up.table()
+      down.table <- need.down.table() 
     
+    d <- rbind(up.table,down.table)
+    all <- merge(d,df,by='label',all = T)
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {
+      
+      p <- p+ geom_tiplab(size=input$tipsize)
+      p <- p%<+%all+geom_tiplab(aes(color=category))+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }else if(input$tip_point){
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+        geom_tippoint(aes(color=category),size=input$tipsize)+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }
+    plotd1(p)
+    p
+
+    }else if(input$choose_analysis=="only_tree"){
+       tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {  
+      p <- p+ geom_tiplab(size=input$tipsize)
+    }else if(input$tip_point){
+      if(input$geom_nodelab){
+        p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p+geom_tippoint(size=input$tipsize)
+    }
+    plotd1(p)
+    p
+    }
+
     
-  },height = height)
+  },height = height
+  )
+  plotd1 <- reactiveVal()
+  output$downloadplot1 <- downloadHandler(
+    filename = function() {
+      "tree_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd1()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+  
+ 
+  
   #2.取出日期
   output$datetable <- renderDataTable({
-    tree <- tree()
+     tree <- sub_tree()
     if (is.null(tree)) {
       return()
     }
@@ -220,124 +520,531 @@ app_server <- function( input, output, session )  {
       write.csv(df,file,row.names = FALSE)
     }
   )
-  
+    data2_1 <- reactive({
+     tree <- tree()
+    if (!is.null(tree)){
+      tree <- tree %>% as.phylo()
+      date <-dateType3(tree = tree,pattern = input$regression)
+      date <- dateNumeric(date = date,format = input$format)
+      divergence <- getdivergence(tree = tree)
+      df <- cbind(label=tree$tip.label,date=date,divergence=divergence)
+      return(df)
+    }else{
+      return(NULL)
+    }
+    
+  })
   #3.取出divergence，回归分析
   output$plot2 <- renderPlot({
-    tree <- tree()
-    if (is.null(tree)) {
-      return()
-    }
+  df1 <- data2_1()
+  sub_divergence <- sub_divergence()
+  p_all <- ggplot(df1, aes(x = date, y = divergence)) +
+      geom_point(colour="gray") +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour="gray")
+  if(input$plot_all){
     df <- data()
     up.table <- up.table()
     down.table <- down.table()
-    ggplot(df, aes(x = date, y = divergence)) +
-      geom_point() +
-      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-      geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
-      geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+    p <-p_all+
+      geom_point(data=df, aes(x = date, y = divergence+sub_divergence)) +
+      geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      theme_bw() +
-      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      mySetTheme()
+      plotd2(p)
+      p
+  }else {
+    df <- data()
+    up.table <- up.table()
+    down.table <- down.table()
+     p <-ggplot(data=df, aes(x = date, y = divergence+sub_divergence))+
+      geom_point() +
+      geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      mySetTheme() 
+      plotd2(p)
+      p
+  }
+
+  
+  #  tree <- sub_tree()
+  #   if (is.null(tree)) {
+  #     return()
+  #   }
+  #   df <- data()
+  #   up.table <- up.table()
+  #   down.table <- down.table()
+  #   p <- ggplot(df, aes(x = date, y = divergence)) +
+  #     geom_point() +
+  #     geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+  #     geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
+  #     geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+  #     # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+  #     mySetTheme() +
+  #     stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+  #   plotd2(p)
+  #   print(p)
   })
+  plotd2 <- reactiveVal()
+  output$downloadplot2 <- downloadHandler(
+    filename = function() {
+      "regression_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd2()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+  
   output$outliers <- renderDataTable({
     up.table <- up.table()
     down.table <- down.table()
     rbind(up.table,down.table)
   })
   observeEvent(input$delete,{
+    
+    output$Summary <- renderTable({  
+      keep <- keep.table()
+      date <- keep$date|> unlist()|>as.numeric()
+      divergence <-  keep$divergence|>unlist()|>as.numeric()
+      df <- cbind(divergence, date)|>as.data.frame()
+      if (input$format == "yy" | input$format == "yyyy") {
+        range <- max(date) - min(date)
+      }
+      else{
+        range <- max(date) - min(date)
+        range <- range * 365
+      }
+      ##make a summary and output
+      summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(6))
+      summary[1, 2] <- range
+      summary[4, 2] <- as.numeric(cor(date, divergence))
+      lm.rtt <- lm(df)
+      summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+      summary[3, 2] <- as.numeric(
+        abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+      summary[5, 2] <- summary(lm.rtt)$r.squared
+      summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+      # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+      # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+      table_dt(summary)
+      print(summary)
+    },
+    digits = 5, width = 8)
+    
+    table_dt <- reactiveVal()
+    output$download_dt2 <- downloadHandler(
+      filename = function(){
+        "summary(delete).csv"
+      },
+      content = function(file){
+        df <- table_dt()
+        write.csv(df,file,row.names = FALSE)
+      }
+    )
     output$plot2 <- renderPlot({
+      sub_divergence <- sub_divergence()
+      df1 <- data2_1()
+      p_all <- ggplot(df1, aes(x = date, y = divergence)) +
+      geom_point(colour="gray") +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour="gray")
       exclude.table <- exclude.table()
       keep.table <- keep.table()
-      ggplot(keep.table, aes(x = date, y = divergence)) +
+      if(input$plot_all){
+           df <- data()
+           up.table <- up.table()
+           down.table <- down.table()
+           p <-p_all+
+             geom_point(data=keep.table, aes(x = date, y = divergence+sub_divergence)) +
+             geom_smooth(data=keep.table, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+             stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
+              geom_point(data = exclude.table, aes(x = date, y = divergence+sub_divergence), color = 'gray')+
+             # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+             mySetTheme()
+             plotd2(p)
+             p
+         }else {
+       p <- ggplot(keep.table, aes(x = date, y = divergence+sub_divergence)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-        geom_point(data = exclude.table, aes(x = date, y = divergence), color = 'gray') +
+        geom_point(data = exclude.table, aes(x = date, y = divergence+sub_divergence), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
+        mySetTheme() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      plotd2(p)
+      print(p)
+  }
+# data_all <- reactive(
+#   req(data2())
+#   cbind(label_all(),divergence_all)|>as.data.frame()
+# )
+      # p <- ggplot(keep.table, aes(x = date, y = divergence)) +
+      #   geom_point() +
+      #   geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      #   geom_point(data = exclude.table, aes(x = date, y = divergence), color = 'gray') +
+      #   # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      #   mySetTheme() +
+      #   stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      # plotd2(p)
+      # print(p)
     })
-    output$plot3 <- renderPlot({
-      need.exclude.table <- need.exclude.table()
-      keep.table <- need.keep.table()
-      ggplot(keep.table, aes_string(x = input$x_var, y = input$y_var)) +
-        geom_point() +
-        geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-        geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
-        # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
-        stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
-    })
+    plotd2 <- reactiveVal()
+    
+    output$downloadplot2 <- downloadHandler(
+      filename = function() {
+        "regression(deleted_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd2()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+    
+    
+
+  # output$Summary2 <- renderTable({  
+  #     date <- date()|> unlist()|>as.numeric()
+  #     divergence <- divergence()|>unlist()|>as.numeric()
+  #     df <- cbind(divergence, date)|>as.data.frame()
+  #     if (input$format == "yy" | input$format == "yyyy") {
+  #       range <- max(date) - min(date)
+  #     }
+  #     else{
+  #       range <- max(date) - min(date)
+  #       range <- range * 365
+  #     }
+  #     ##make a summary and output
+  #     summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+  #                                        "X-Intercept", "Correlation", 
+  #                                        "R squared", "RSE"), value=numeric(6))
+  #     summary[1, 2] <- range
+  #     summary[4, 2] <- as.numeric(cor(date, divergence))
+  #     lm.rtt <- lm(df)
+  #     summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+  #     summary[3, 2] <- as.numeric(
+  #       abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+  #     summary[5, 2] <- summary(lm.rtt)$r.squared
+  #     summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+  #     # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+  #     # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+  #     table_dt(summary)
+  #     print(summary)
+  #   },
+  #   digits = 5, width = 8)
+
     
     print("here do delete")
+
     output$plot1 <- renderPlot({
-      tree <- tree()
+      tree <- sub_tree()
       up.table <- up.table()
       down.table <- down.table()
       to_drop <- c(down.table$label,up.table$label)
       tip_reduced <- drop.tip(tree, to_drop)
+
+      p <- ggtree(tip_reduced,color=input$color3, size=input$size)+mySetTheme2() 
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       if (input$tip) {
-        ggtree(tip_reduced) + geom_tiplab()+geom_nodelab(aes(label=node),hjust = -.3)
+        p <- p+ geom_tiplab(size=input$tipsize)
+      }else if(input$tip_point){
+        if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+        p <- p+ geom_tippoint(size=input$tipsize,color="gray")+
+          geom_tippoint(size=input$tipsize)
+        print(p)
       }else{
-        ggtree(tip_reduced)+geom_nodelab(aes(label=node),hjust = -.3)
+        p <- p
       }
-      
+      plotd1(p)
+      print(p)
     },height = height)
-    
+    plotd1 <- reactiveVal()
+    output$downloadplot1 <- downloadHandler(
+      filename = function() {
+        "tree_plot(delete).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd1()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
     
   })
-  observeEvent(input$reset,{
-    output$plot1 <- renderPlot({
-      tree <- tree()
-      if (is.null(tree)) {
-        return()
-      }
-      df <- data()
-      up.table <- up.table()
-      down.table <- down.table()
-      d <- rbind(up.table,down.table)
-      all <- merge(d,df,by='label',all = T)
-      if (input$tip) {
-        p <- ggtree(tree,color=input$color3, size=input$size) + geom_tiplab()+geom_nodelab(aes(label=node),hjust=-.3)
-        p%<+%all+ geom_tippoint(aes(shape=category,color=category))+
-          geom_tiplab(aes(color=category))
-      }else{
-        p <- ggtree(tree,color=input$color3, size=input$size)+geom_nodelab(aes(label=node),hjust=-.3)
-        p}
-    },height = height)
-    
-    output$plot2 <- renderPlot({
-      df <- data()
-      up.table <- up.table()
-      down.table <- down.table()
-      ggplot(df, aes(x = date, y = divergence)) +
+observeEvent(input$delete2,{
+  output$Summary2 <- renderTable({  
+      df1 <- need.keep.table()
+      df <- df1[,c("label",input$x_var,input$y_var)]
+       lm.rtt <- lm(as.formula(paste(input$y_var, "~", input$x_var)), need.keep.table())
+       summary <- data.frame(Dated.tips=c( "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(5))
+       summary[1, 2] <- as.numeric(lm.rtt$coefficients[2])
+        summary[2, 2] <- as.numeric(
+       abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+       summary[3, 2] <- as.numeric(cor(df[,input$x_var], df[,input$y_var]))
+       summary[4, 2] <- summary(lm.rtt)$r.squared
+       summary[5, 2] <- summary(lm.rtt)[["sigma"]]
+       print(summary)
+       })
+
+output$plot3 <- renderPlot({
+
+  df1_1 <- merged_data2()
+    df1_2 <- df1_1[,c("label",input$x_var,input$y_var)]
+  sub_divergence <- sub_divergence()
+  # x <- as.character(input$x_var)
+  # y  <- as.character()
+  p_all2 <- ggplot(df1_1, mapping = aes_string(x=input$x_var ,y=input$y_var)) +
+      geom_point(colour="gray") +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour="gray")
+  #  browser()
+  if(input$plot_all2){
+     need.exclude.table <- need.exclude.table()
+      keep.table <- need.keep.table()
+      p <- p_all2+
+        geom_point(data=keep.table, aes_string(x = input$x_var, y = input$y_var)) +
+        geom_smooth(data=keep.table, aes_string(x = input$x_var, y = input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+        geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
+        # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+        mySetTheme() +
+        stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      plotd3(p)
+      print(p)
+  }else {
+       need.exclude.table <- need.exclude.table()
+      keep.table <- need.keep.table()
+      p <- ggplot(keep.table, aes_string(x = input$x_var, y = input$y_var)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-        geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
-        geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+        geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
+        mySetTheme() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+      plotd3(p)
+      print(p)
+  }
     })
-    output$plot3 <- renderPlot({
+    plotd3 <- reactiveVal()
+    
+    output$downloadplot3 <- downloadHandler(
+      filename = function() {
+        "regression(deleted)_plot.pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd3()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+})
+  observeEvent(input$reset,{
+    output$Summary <- renderTable({  
+      date <- date()|> unlist()|>as.numeric()
+      divergence <- divergence()|>unlist()|>as.numeric()
+      df <- cbind(divergence, date)|>as.data.frame()
+      if (input$format == "yy" | input$format == "yyyy") {
+        range <- max(date) - min(date)
+      }
+      else{
+        range <- max(date) - min(date)
+        range <- range * 365
+      }
+      ##make a summary and output
+      summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(6))
+      summary[1, 2] <- range
+      summary[4, 2] <- as.numeric(cor(date, divergence))
+      lm.rtt <- lm(df)
+      summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+      summary[3, 2] <- as.numeric(
+        abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+      summary[5, 2] <- summary(lm.rtt)$r.squared
+      summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+      # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+      # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+      table_dt(summary)
+      print(summary)
+    },
+    digits = 5, width = 8)
+    
+    table_dt <- reactiveVal()
+    output$download_dt2 <- downloadHandler(
+      filename = function(){
+        "summary(reset).csv"
+      },
+      content = function(file){
+        df <- table_dt()
+        write.csv(df,file,row.names = FALSE)
+      }
+    )
+    
+     
+output$plot1 <- renderPlot({
+  if (input$choose_analysis=="Temporal_signal") {
+    tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+    df <- data()
+    up.table <- up.table()
+    down.table <- down.table()
+    d <- rbind(up.table,down.table)
+    all <- merge(d,df,by='label',all = T)
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {
+      
+      p <- p+ geom_tiplab(size=input$tipsize)
+      p <- p%<+%all+geom_tiplab(aes(color=category))+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }else if(input$tip_point){
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+        geom_tippoint(aes(color=category),size=input$tipsize)+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }
+    plotd1(p)
+    p
+    } else if (input$choose_analysis=="Phylogenetic_signal") {
+      tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+
       df1 <- merged_data()
       df <- df1[,c("label",input$x_var,input$y_var)]
-      need.up.table <- need.up.table()
-      need.down.table <- need.down.table()
-      ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
-        geom_point() +
-        geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-        geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
-        geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
-        # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        theme_bw() +
-        stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
-    })
-    print("here do reset")
+      up.table <- need.up.table()
+      down.table <- need.down.table() 
+    
+    d <- rbind(up.table,down.table)
+    all <- merge(d,df,by='label',all = T)
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {
+      
+      p <- p+ geom_tiplab(size=input$tipsize)
+      p <- p%<+%all+geom_tiplab(aes(color=category))+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }else if(input$tip_point){
+      if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
+        geom_tippoint(aes(color=category),size=input$tipsize)+
+        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+    }
+    plotd1(p)
+    p
+
+    }else if(input$choose_analysis=="only_tree"){
+       tree <- sub_tree()
+    if (is.null(tree)) {
+      return(NULL)
+    }
+
+    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+    if (input$tip) {  
+      p <- p+ geom_tiplab(size=input$tipsize)
+    }else if(input$tip_point){
+      if(input$geom_nodelab){
+        p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
+      p <- p+geom_tippoint(size=input$tipsize)
+    }
+    plotd1(p)
+    p
+    }
+
+    
+  },height = height
+  )
+  plotd1 <- reactiveVal()
+  output$downloadplot1 <- downloadHandler(
+    filename = function() {
+      "tree_plot_reset.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd1()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
+output$plot2 <- renderPlot({
+  df1 <- data2_1()
+  sub_divergence <- sub_divergence()
+  p_all <- ggplot(df1, aes(x = date, y = divergence)) +
+      geom_point(colour="gray") +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour="gray")
+  if(input$plot_all){
+    df <- data()
+    up.table <- up.table()
+    down.table <- down.table()
+    p <-p_all+
+      geom_point(data=df, aes(x = date, y = divergence+sub_divergence)) +
+      geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      mySetTheme()
+      plotd2(p)
+      p
+  }else {
+    df <- data()
+    up.table <- up.table()
+    down.table <- down.table()
+     p <-ggplot(data=df, aes(x = date, y = divergence+sub_divergence))+
+      geom_point() +
+      geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      mySetTheme() 
+      plotd2(p)
+      p
+  }
+
+  
+  #  tree <- sub_tree()
+  #   if (is.null(tree)) {
+  #     return()
+  #   }
+  #   df <- data()
+  #   up.table <- up.table()
+  #   down.table <- down.table()
+  #   p <- ggplot(df, aes(x = date, y = divergence)) +
+  #     geom_point() +
+  #     geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+  #     geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
+  #     geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+  #     # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+  #     mySetTheme() +
+  #     stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+  #   plotd2(p)
+  #   print(p)
+  })
+
+    plotd2 <- reactiveVal()
+    output$downloadplot2 <- downloadHandler(
+      filename = function() {
+        "regression_plot(reset).pdf"  # 指定要保存的文件名
+      },
+      content = function(file) {
+        p <- plotd2()
+        ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+      }
+    )
+   
     
   })
+
   
   output$dataframe <- renderDataTable({
-    tree <- tree()
+     tree <- sub_tree()
     if (is.null(tree)) {
       return(NULL)
     }
@@ -354,7 +1061,7 @@ app_server <- function( input, output, session )  {
     
     for (i in a:b) {
       f=i-a+1
-      sub.tree[[f]] <- tree_subset(tree = tree,node = i,levels_back = 0)
+      sub.tree[[f]] <- extract.clade(tree,node = i)
       date[[f]] <- dateType3(sub.tree[[f]],pattern = input$regression) %>% dateNumeric(format = input$format) 
       divergence[[f]] <- getdivergence(tree = sub.tree[[f]])
       df_td[[f]] <- as.data.frame(cbind(date=date[[f]],divergence=divergence[[f]]))
@@ -405,45 +1112,51 @@ app_server <- function( input, output, session )  {
     }
   )
   
+
+
+  # data2_1 <- reactive({
+  #    tree <- tree()
+  #   if (!is.null(tree)){
+  #     tree <- tree %>% as.phylo()
+  #     date <-dateType3(tree = tree,pattern = input$regression)
+  #     date <- dateNumeric(date = date,format = input$format)
+  #     divergence <- getdivergence(tree = tree)
+  #     df <- cbind(label=tree$tip.label,date=date,divergence=divergence)|>as.data.frame()
+  #     return(df)
+  #   }else{
+  #     return(NULL)
+  #   }
+    
+  # })
+  existing_data <-reactive({
+    divergence <- divergence()
+    label <- label()
+    df <- data.frame(label=label,divergence=divergence)
+    
+    return(df)
+  })
   data2 <- reactive({
     req(input$outdata)
     read.csv(input$outdata$datapath)
   })
-  
-  existing_data <-reactive({
-    date <- date()
-    divergence <- divergence()
-    label <- label()
-    df <- data.frame(label=label,divergence=divergence,date=date)
-    
-    return(df)
-  })
-  
+
   merged_data <- reactive({
     req(data2())
     # 将上传的表格与现有的表格合并
     if (!is.null(data2())) {
       existing_data <- existing_data()
-      merged <- merge(existing_data, data2()) %>%unique() %>% na.omit()
+      merged <- merge(existing_data, data2(),all.x=TRUE) %>%unique() %>% na.omit()
+      merged[,"divergence"] <- merged[,"divergence"]+sub_divergence()
       merged
     } else {
       
     }
   })
-  observeEvent(merged_data(), {
+ observeEvent(merged_data(), {
     updateSelectInput(session, "x_var", choices = colnames(merged_data()))
     updateSelectInput(session, "y_var", choices = colnames(merged_data()))
   })
-  
-  output$data_table <- renderDataTable({
-    req(merged_data())
-    merged_data()
-  })
-  regression <- reactive({
-    req(input$regression_btn)
-    lm(as.formula(paste(input$y_var, "~", input$x_var)), merged_data())
-  })
-  estimate2 <- function(lm,p){
+ estimate2 <- function(lm,p){
     rst <- rstudent(lm)
     down <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p / 2&rst<0
     up <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p/ 2&rst>0
@@ -459,7 +1172,20 @@ app_server <- function( input, output, session )  {
       return(up.table)
     }else{return(NULL)}
   })
-  
+  merged_data2 <- reactive({
+  req(data2)
+  divergence_all <- divergence_all()
+  label_all <- label_all()
+  data_all <- data.frame(label=label_all,divergence=divergence_all)
+  if (!is.null(data2())) {
+      data_out <- data2()
+      # data_all <- data2_1()
+      merged <- merge(data_out, data_all,by="label") %>%unique() %>% na.omit()
+      merged
+    } else {
+      
+    }
+})
   need.down.table <- reactive({
     df1 <- merged_data()
     df <- df1[,c("label",input$x_var,input$y_var)]
@@ -493,23 +1219,139 @@ app_server <- function( input, output, session )  {
       return(exclude.table)
     }else{return(NULL)}
   })
-  
-  
-  output$plot3 <- renderPlot({
-    df1 <- merged_data()
+
+   regression <- reactive({
+    req(input$regression_btn)
+    lm(as.formula(paste(input$y_var, "~", input$x_var)), merged_data())
+  })
+  observeEvent(input$regression_btn,{
+      
+  output$data_table <- renderDataTable({
+    req(merged_data())
+    merged_data()
+  })
+ 
+ observeEvent(input$regression_btn,{
+df1 <- merged_data()
     df <- df1[,c("label",input$x_var,input$y_var)]
     need.up.table <- need.up.table()
     need.down.table <- need.down.table()
-    ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
+    p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
       geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      theme_bw() +
+      mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    plotd3(p)
+
+    output$Summary2 <- renderTable({  
+      df1 <- merged_data()
+      df <- df1[,c("label",input$x_var,input$y_var)]
+       lm.rtt <- lm(as.formula(paste(input$y_var, "~", input$x_var)), merged_data())
+       summary <- data.frame(Dated.tips=c( "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(5))
+       summary[1, 2] <- as.numeric(lm.rtt$coefficients[2])
+        summary[2, 2] <- as.numeric(
+       abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+       summary[3, 2] <- as.numeric(cor(df[,input$x_var], df[,input$y_var]))
+       summary[4, 2] <- summary(lm.rtt)$r.squared
+       summary[5, 2] <- summary(lm.rtt)[["sigma"]]
+       print(summary)
+    })
+
+    # output$Summary2 <- renderTable({  
+  #     date <- date()|> unlist()|>as.numeric()
+  #     divergence <- divergence()|>unlist()|>as.numeric()
+  #     df <- cbind(divergence, date)|>as.data.frame()
+  #     if (input$format == "yy" | input$format == "yyyy") {
+  #       range <- max(date) - min(date)
+  #     }
+  #     else{
+  #       range <- max(date) - min(date)
+  #       range <- range * 365
+  #     }
+  #     ##make a summary and output
+  #     summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+  #                                        "X-Intercept", "Correlation", 
+  #                                        "R squared", "RSE"), value=numeric(6))
+  #     summary[1, 2] <- range
+  #     summary[4, 2] <- as.numeric(cor(date, divergence))
+  #     lm.rtt <- lm(df)
+  #     summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+  #     summary[3, 2] <- as.numeric(
+  #       abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+  #     summary[5, 2] <- summary(lm.rtt)$r.squared
+  #     summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+  #     # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+  #     # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+  #     table_dt(summary)
+  #     print(summary)
+  #   },
+  #   digits = 5, width = 8)
+ })
+
+# data2_1
+
+    output$plot3 <- renderPlot({
+      # browser()
+    df1_1 <- merged_data2()
+    df1_2 <- df1_1[,c("label",input$x_var,input$y_var)]
+  sub_divergence <- sub_divergence()
+  # x <- as.character(input$x_var)
+  # y  <- as.character()
+  p_all2 <- ggplot(df1_1, mapping = aes_string(x=input$x_var ,y=input$y_var)) +
+      geom_point(colour="gray") +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour="gray")
+  #  browser()
+  if(input$plot_all2){
+    df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    # df[,"divergence"] <- df[,"divergence"]+sub_divergence()
+    need.up.table <- need.up.table()
+   
+    need.down.table <- need.down.table()
+
+    p <- p_all2+
+      geom_point(data=df, aes_string(x = input$x_var, y =input$y_var)) +
+      geom_smooth(data=df, aes_string(x = input$x_var, y =input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      mySetTheme() +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    plotd3(p)
+    print(p)
+  }else {
+      df1 <- merged_data()
+    df <- df1[,c("label",input$x_var,input$y_var)]
+    need.up.table <- need.up.table()
+    need.down.table <- need.down.table()
+    p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
+      mySetTheme() +
+      stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
+    plotd3(p)
+    print(p)
+  }
   })
+  plotd3 <- reactiveVal()
   
+  output$downloadplot3 <- downloadHandler(
+    filename = function() {
+      "regression(external_data)_plot.pdf"  # 指定要保存的文件名
+    },
+    content = function(file) {
+      p <- plotd3()
+      ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
+    }
+  )
   output$outliers2 <- renderDataTable({
     need.up.table <- need.up.table()
     need.down.table <- need.down.table()
@@ -537,7 +1379,7 @@ app_server <- function( input, output, session )  {
     modele <- list()
     for (i in a:b) {
       f=i-a+1
-      sub.tree[[f]] <- tree_subset(tree = tree,node = i,levels_back = 0)
+      sub.tree[[f]] <- extract.clade(tree,node = i)
       divergence[[f]] <- getdivergence(tree = sub.tree[[f]])
       label[[f]] <-sub.tree[[f]]$tip.label
       df_td1[[f]] <- data.frame(label=label[[f]],divergence=divergence[[f]])
@@ -591,5 +1433,51 @@ app_server <- function( input, output, session )  {
       write.csv(df,file,row.names = FALSE)
     }
   )
+    
+    output$Summary <- renderTable({  
+      date <- date()|> unlist()|>as.numeric()
+      divergence <- divergence()|>unlist()|>as.numeric()
+      df <- cbind(divergence, date)|>as.data.frame()
+      if (input$format == "yy" | input$format == "yyyy") {
+        range <- max(date) - min(date)
+      }
+      else{
+        range <- max(date) - min(date)
+        range <- range * 365
+      }
+      ##make a summary and output
+      summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(6))
+      summary[1, 2] <- range
+      summary[4, 2] <- as.numeric(cor(date, divergence))
+      lm.rtt <- lm(df)
+      summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+      summary[3, 2] <- as.numeric(
+        abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+      summary[5, 2] <- summary(lm.rtt)$r.squared
+      summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+      # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+      # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+      table_dt(summary)
+      print(summary)
+    },
+    digits = 5, width = 8)
+    
+    table_dt <- reactiveVal()
+    output$download_dt2 <- downloadHandler(
+      filename = function(){
+        "summary.csv"
+      },
+      content = function(file){
+        df <- table_dt()
+        write.csv(df,file,row.names = FALSE)
+      }
+    )
+
+  })
   
+  
+    
 }
+
