@@ -61,6 +61,9 @@ get_new_divergence <- function(tree,node){
 dataset <- cbind(tree$edge,tree$edge.length)|>as.data.frame()
 names(dataset) <- c("from", "to", "length")
 len <- 0
+if(is.null(node)|is.na(node)){
+  node <- length(tree$tip.label)+1
+}
 a <- nodepath(tree,from = length(tree$tip.label)+1,to=node)
 if(node==length(tree$tip.label)+1){
   return(0)

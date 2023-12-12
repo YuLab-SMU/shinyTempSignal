@@ -16,7 +16,7 @@ app_ui <- function(request) {
         radioButtons(
           inputId = "filetype",
           "choose your file type",
-          choiceNames = list("Newick", "NEXUS","Beast", "Phylip"),
+          choiceNames = list("Newick", "NEXUS","BEAST", "Phylip"),
           choiceValues = list("Newick", "NEXUS","Beast",  "Phylip")
         ),
         fileInput("treefile", "choose a tree file"),
@@ -44,11 +44,11 @@ app_ui <- function(request) {
         sidebarMenu(
            menuItem("Tree structure exploration", tabName = "tree"),
           menuItem("Sample Dates", tabName = "Dates"),
-          menuItem("Temporal signal analysis", tabName = "regression"),
-          menuItem("Subtree Temporal signal", tabName = "node"),
+          menuItem("Temporal signal", tabName = "regression"),
+          # menuItem("Subtree Temporal signal", tabName = "node"),
          # menuItem("Time_Series_Analysis", tabName = "time"),
-          menuItem("Phylogenetic signal", tabName = "out"),
-          menuItem("Subtree phylogenetic signal", tabName = "out_data_regression")
+          menuItem("Phylogenetic signal", tabName = "out")
+          # menuItem("Subtree phylogenetic signal", tabName = "out_data_regression")
         )
       ),
       dashboardBody(
@@ -58,16 +58,16 @@ app_ui <- function(request) {
             dataTableOutput("datetable"),
             downloadButton("download1", "download")
           ),
-          tabItem(
-            tabName = "node",
-            dataTableOutput("dataframe"),
-            downloadButton("download2.table", "download")
-          ),
-          tabItem(
-            tabName = "out_data_regression",
-            dataTableOutput("out_dataframe"),
-            downloadButton("download3.table", "download")
-          ),
+          # tabItem(
+          #   tabName = "node",
+          #   dataTableOutput("dataframe"),
+          #   downloadButton("download2.table", "download")
+          # ),
+          # tabItem(
+          #   tabName = "out_data_regression",
+          #   dataTableOutput("out_dataframe"),
+          #   downloadButton("download3.table", "download")
+          # ),
           tabItem(
             tabName = "tree",
             
@@ -109,12 +109,14 @@ app_ui <- function(request) {
             box(
               width = 8,
               plotOutput("plot2"),
-              downloadButton("downloadplot2", "download"),
-              actionButton("delete", "autodel"),
-              actionButton("reset", "Reset"),
+             fluidRow( 
+              column(width = 3,downloadButton("downloadplot2", "download")),
+              column(width = 3,actionButton("delete", "autodel")),
+              column(width = 3,actionButton("reset", "Reset")),
+              column(width = 3,textInput("temp_node","node",value = ""))),
               checkboxInput("plot_all", "plot whole tree regression", TRUE),
               fluidRow(column(
-                6, numericInput("pvalue", "pvalue<:",
+                6, numericInput("pvalue", "pvalue<:",    
                                 value = "0.05")
               ),
               column(
@@ -129,7 +131,9 @@ app_ui <- function(request) {
               tableOutput("Summary"),
               downloadButton("download_dt2", "download")
             ),
-            
+            box(width = 12,
+            dataTableOutput("dataframe"),
+            downloadButton("download2.table", "download")),
             
             dataTableOutput("outliers")
           ),
@@ -139,13 +143,17 @@ app_ui <- function(request) {
               width = 8,
               plotOutput("plot3"),
               downloadButton("downloadplot3", "download"),
-              fluidRow(actionButton("delete2", "autodel"),
-              actionButton("reset2", "Reset")),
+              
               fluidRow(
                 column(3,selectInput("x_var", "please choose your x var", choices = NULL),),
                 column(3, selectInput("y_var", "please choose your Y var", choices = NULL),),
                 column(3,actionButton("regression_btn", "regression_analysis")),
-                column(3,checkboxInput("plot_all2", "plot whole tree regression", TRUE)))
+                column(3,checkboxInput("plot_all2", "plot whole tree regression", TRUE))
+                ),
+                fluidRow(
+                column(width = 3,actionButton("delete2", "autodel")),
+                column(width = 3,actionButton("reset2", "Reset")),
+                column(width = 3,textInput("phylo_node","node",value = "")))
             ),
             
             box(
@@ -155,8 +163,14 @@ app_ui <- function(request) {
              
               
             ),
-            box(dataTableOutput("data_table"), width = 12),
-            box(dataTableOutput("outliers2"), width = 12)
+            box(
+              width = 12,
+              dataTableOutput("out_dataframe"),
+              downloadButton("download3.table", "download")
+            ),
+           
+            box(dataTableOutput("outliers2"), width = 12),
+             box(dataTableOutput("data_table"), width = 12)
           )
         )
       )
