@@ -210,6 +210,47 @@ label_all<-reactive({
   updateTextInput(session,"node",value = reset_root_node)
 })
 
+   output$Summary <- renderTable({  
+      date <- date()|> unlist()|>as.numeric()
+      divergence <- divergence()|>unlist()|>as.numeric()
+      df <- cbind(divergence, date)|>as.data.frame()
+      if (input$format == "yy" | input$format == "yyyy") {
+        range <- max(date) - min(date)
+      }
+      else{
+        range <- max(date) - min(date)
+        range <- range * 365
+      }
+      ##make a summary and output
+      summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
+                                         "X-Intercept", "Correlation", 
+                                         "R squared", "RSE"), value=numeric(6))
+      summary[1, 2] <- range
+      summary[4, 2] <- as.numeric(cor(date, divergence))
+      lm.rtt <- lm(df)
+      summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
+      summary[3, 2] <- as.numeric(
+        abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
+      summary[5, 2] <- summary(lm.rtt)$r.squared
+      summary[6, 2] <- summary(lm.rtt)[["sigma"]]
+      # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
+      # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
+      table_dt(summary)
+      print(summary)
+    },
+    digits = 5, width = 8)
+    
+    table_dt <- reactiveVal()
+    output$download_dt2 <- downloadHandler(
+      filename = function(){
+        "summary(reset).csv"
+      },
+      content = function(file){
+        df <- table_dt()
+        write.csv(df,file,row.names = FALSE)
+      }
+    )
+
 observeEvent(input$reset2,{
     output$Summary2 <- renderTable({  
       df1 <- merged_data()
@@ -1444,6 +1485,7 @@ df1 <- merged_data()
   )
     
     output$Summary <- renderTable({  
+      # browser()
       date <- date()|> unlist()|>as.numeric()
       divergence <- divergence()|>unlist()|>as.numeric()
       df <- cbind(divergence, date)|>as.data.frame()

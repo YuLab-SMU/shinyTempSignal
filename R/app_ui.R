@@ -96,7 +96,7 @@ app_ui <- function(request) {
                           0, 10, 3, step = 0.1),
               radioButtons(
           inputId = "choose_analysis",
-          "choose the point to displsy in the tree",
+          "choose the point to display in the tree",
           choiceNames = list("only_tree","Temporal_signal", "Phylogenetic_signal"),
           choiceValues = list("only_tree","Temporal_signal", "Phylogenetic_signal")
         )
