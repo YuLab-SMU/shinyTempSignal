@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal Signal of Molecular Phylogenies
-Version: 0.0.4
+Version: 0.0.5
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -28,7 +28,6 @@ Imports:
     shinydashboard,
     shinyjs,
     stringr,
-    tidytree,
     treeio,
     ggpmisc
 Suggests:
