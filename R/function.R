@@ -1,3 +1,5 @@
+
+
 dateType3 <- function(tree, pattern) {
   date <- numeric(length(tree$tip.label))
   for (i in 1:length(tree$tip.label)) {
