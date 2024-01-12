@@ -87,6 +87,7 @@ mySetTheme <- function()
  )
   sub_tree <- eventReactive(
     input$node, {
+#      browser()
       if(input$node != "") {
         tree <- tree()
         check_node <- as.numeric(input$node)<length(as.phylo(tree)$tip.label)
@@ -108,11 +109,11 @@ mySetTheme <- function()
     req(!is.null(input$treefile))
     if (input$filetype=="Newick") {
       tree <- read.tree(input$treefile$datapath) %>% as.phylo()
-    } else if (input$filetype=="beast") {
+    } else if (input$filetype=="Beast") {
       tree <- read.beast(input$treefile$datapath) %>% as.phylo()
-    } else if (input$filetype=="Nexus") {
+    } else if (input$filetype=="NEXUS") {
       tree <- read.nexus(input$treefile$datapath)
-    } else if (input$filetype=="phylip") {
+    } else if (input$filetype=="Phylip") {
       tree <- read.phylip.tree(input$treefile$datapath) %>% as.phylo()
     }
     tree
