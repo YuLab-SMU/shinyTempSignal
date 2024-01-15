@@ -1,3 +1,8 @@
+# shinyTempSignal 0.0.5.001
+
++ modify color scheme (2023-01-15, Mon, #30)
++ update output summary data frame (2023-01-13, Sat, #29)
+
 # shinyTempSignal 0.0.5
 
 + simultaneous update node across different panels (2023-12-12, Tue, #28)
