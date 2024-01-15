@@ -38,6 +38,8 @@
 #' @noRd
 
 app_server <- function(input, output, session)  {
+ down_color = "#6a73cf"
+    up_color ="#f26115"
 mySetTheme <- function()
   {
     mySetTheme <- theme_prism(base_size = 14, border = TRUE) +
@@ -66,7 +68,7 @@ mySetTheme <- function()
   } else {
     tree <- tree()
   }
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none")
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none")
     x <- as.numeric(input$plotClick$x)
     y <- as.numeric(input$plotClick$y)
     node <- click_node(x, y, p$data)
@@ -87,6 +89,7 @@ mySetTheme <- function()
  )
   sub_tree <- eventReactive(
     input$node, {
+#      browser()
       if(input$node != "") {
         tree <- tree()
         check_node <- as.numeric(input$node)<length(as.phylo(tree)$tip.label)
@@ -108,11 +111,11 @@ mySetTheme <- function()
     req(!is.null(input$treefile))
     if (input$filetype=="Newick") {
       tree <- read.tree(input$treefile$datapath) %>% as.phylo()
-    } else if (input$filetype=="beast") {
+    } else if (input$filetype=="Beast") {
       tree <- read.beast(input$treefile$datapath) %>% as.phylo()
-    } else if (input$filetype=="Nexus") {
+    } else if (input$filetype=="NEXUS") {
       tree <- read.nexus(input$treefile$datapath)
-    } else if (input$filetype=="phylip") {
+    } else if (input$filetype=="Phylip") {
       tree <- read.phylip.tree(input$treefile$datapath) %>% as.phylo()
     }
     tree
@@ -268,6 +271,8 @@ observeEvent(input$reset2,{
        print(summary)
     })
   output$plot1 <- renderPlot({
+    # browser()
+    req(sub_tree())
   if (input$choose_analysis=="Temporal_signal") {
     tree <- sub_tree()
     if (is.null(tree)) {
@@ -278,18 +283,18 @@ observeEvent(input$reset2,{
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }
     plotd1(p)
     p
@@ -306,18 +311,18 @@ observeEvent(input$reset2,{
     
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }
     plotd1(p)
     p
@@ -328,7 +333,7 @@ observeEvent(input$reset2,{
       return(NULL)
     }
 
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {  
       p <- p+ geom_tiplab(size=input$tipsize)
@@ -376,10 +381,10 @@ observeEvent(input$reset2,{
     p <- p_all2+
       geom_point(data=df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_smooth(data=df, aes_string(x = input$x_var, y =input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color) +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme() +
+      mySetTheme()+theme_classic() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
     plotd3(p)
     print(p)
@@ -391,10 +396,10 @@ observeEvent(input$reset2,{
     p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color) +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme() +
+      mySetTheme()+theme_classic() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
     plotd3(p)
     print(p)
@@ -456,7 +461,7 @@ observeEvent(input$reset2,{
   
   output$plot1 <- renderPlot({
     # browser()
-    req(sub_tree())
+    # req(sub_tree())
   if (input$choose_analysis=="Temporal_signal") {
     tree <- sub_tree()
     if (is.null(tree)) {
@@ -467,18 +472,18 @@ observeEvent(input$reset2,{
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }
     plotd1(p)
     p
@@ -495,18 +500,18 @@ observeEvent(input$reset2,{
     
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }
     plotd1(p)
     p
@@ -517,7 +522,7 @@ observeEvent(input$reset2,{
       return(NULL)
     }
 
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {  
       p <- p+ geom_tiplab(size=input$tipsize)
@@ -548,6 +553,7 @@ observeEvent(input$reset2,{
   
   #2.取出日期
   output$datetable <- renderDataTable({
+    # browser()
      tree <- sub_tree()
     if (is.null(tree)) {
       return()
@@ -599,10 +605,10 @@ observeEvent(input$reset2,{
       geom_point(data=df, aes(x = date, y = divergence+sub_divergence)) +
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
-      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color) +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme()
+      mySetTheme()+theme_classic()
       plotd2(p)
       p
   }else {
@@ -613,10 +619,10 @@ observeEvent(input$reset2,{
       geom_point() +
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
-      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color) +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme() 
+      mySetTheme()+theme_classic() 
       plotd2(p)
       p
   }
@@ -632,10 +638,10 @@ observeEvent(input$reset2,{
   #   p <- ggplot(df, aes(x = date, y = divergence)) +
   #     geom_point() +
   #     geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-  #     geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
-  #     geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+  #     geom_point(data = down.table, aes(x = date, y = divergence), color = down_color) +
+  #     geom_point(data = up.table,aes(x = date, y = divergence), color =up_color)+
   #     # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-  #     mySetTheme() +
+  #     mySetTheme()+theme_classic() +
   #     stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
   #   plotd2(p)
   #   print(p)
@@ -717,7 +723,7 @@ observeEvent(input$reset2,{
              stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
               geom_point(data = exclude.table, aes(x = date, y = divergence+sub_divergence), color = 'gray')+
              # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-             mySetTheme()
+             mySetTheme()+theme_classic()
              plotd2(p)
              p
          }else {
@@ -726,7 +732,7 @@ observeEvent(input$reset2,{
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = exclude.table, aes(x = date, y = divergence+sub_divergence), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        mySetTheme() +
+        mySetTheme()+theme_classic() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
       plotd2(p)
       print(p)
@@ -740,7 +746,7 @@ observeEvent(input$reset2,{
       #   geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       #   geom_point(data = exclude.table, aes(x = date, y = divergence), color = 'gray') +
       #   # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      #   mySetTheme() +
+      #   mySetTheme()+theme_classic() +
       #   stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
       # plotd2(p)
       # print(p)
@@ -799,7 +805,7 @@ observeEvent(input$reset2,{
       to_drop <- c(down.table$label,up.table$label)
       tip_reduced <- drop.tip(tree, to_drop)
 
-      p <- ggtree(tip_reduced,color=input$color3, size=input$size)+mySetTheme2() 
+      p <- ggtree(tip_reduced,color=input$color3, size=input$size) 
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       if (input$tip) {
         p <- p+ geom_tiplab(size=input$tipsize)
@@ -862,7 +868,7 @@ output$plot3 <- renderPlot({
         geom_smooth(data=keep.table, aes_string(x = input$x_var, y = input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        mySetTheme() +
+        mySetTheme()+theme_classic() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
       plotd3(p)
       print(p)
@@ -874,7 +880,7 @@ output$plot3 <- renderPlot({
         geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
         geom_point(data = need.exclude.table, aes_string(x = input$x_var, y = input$y_var), color = 'gray') +
         # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-        mySetTheme() +
+        mySetTheme()+theme_classic() +
         stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
       plotd3(p)
       print(p)
@@ -946,18 +952,18 @@ output$plot1 <- renderPlot({
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }
     plotd1(p)
     p
@@ -974,18 +980,18 @@ output$plot1 <- renderPlot({
     
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = "red", "down" = "blue"))
+        scale_color_manual(values = c("up" = up_color, "down" = down_color))
     }
     plotd1(p)
     p
@@ -996,7 +1002,7 @@ output$plot1 <- renderPlot({
       return(NULL)
     }
 
-    p <- ggtree(tree,color=input$color3, size=input$size)+mySetTheme2()+theme(legend.position="none") 
+    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {  
       p <- p+ geom_tiplab(size=input$tipsize)
@@ -1036,10 +1042,10 @@ output$plot2 <- renderPlot({
       geom_point(data=df, aes(x = date, y = divergence+sub_divergence)) +
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
-      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color) +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme()
+      mySetTheme()+theme_classic()
       plotd2(p)
       p
   }else {
@@ -1050,10 +1056,10 @@ output$plot2 <- renderPlot({
       geom_point() +
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
-      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = 'blue') +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color ="red")+
+      geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color) +
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme() 
+      mySetTheme()+theme_classic() 
       plotd2(p)
       p
   }
@@ -1069,10 +1075,10 @@ output$plot2 <- renderPlot({
   #   p <- ggplot(df, aes(x = date, y = divergence)) +
   #     geom_point() +
   #     geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-  #     geom_point(data = down.table, aes(x = date, y = divergence), color = 'blue') +
-  #     geom_point(data = up.table,aes(x = date, y = divergence), color ="red")+
+  #     geom_point(data = down.table, aes(x = date, y = divergence), color = down_color) +
+  #     geom_point(data = up.table,aes(x = date, y = divergence), color =up_color)+
   #     # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-  #     mySetTheme() +
+  #     mySetTheme()+theme_classic() +
   #     stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
   #   plotd2(p)
   #   print(p)
@@ -1289,10 +1295,10 @@ df1 <- merged_data()
     p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color) +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme() +
+      mySetTheme()+theme_classic() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
     plotd3(p)
 
@@ -1367,10 +1373,10 @@ df1 <- merged_data()
     p <- p_all2+
       geom_point(data=df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_smooth(data=df, aes_string(x = input$x_var, y =input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color) +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme() +
+      mySetTheme()+theme_classic() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
     plotd3(p)
     print(p)
@@ -1382,10 +1388,10 @@ df1 <- merged_data()
     p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = 'blue') +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color ="red")+
+      geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color) +
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-      mySetTheme() +
+      mySetTheme()+theme_classic() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
     plotd3(p)
     print(p)
