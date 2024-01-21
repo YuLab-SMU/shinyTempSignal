@@ -1,0 +1,84 @@
+---
+title: "Introduction of using shinyTempSignal"
+author: "Guangchuang Yu\\
+
+        School of Basic Medical Sciences, Southern Medical University"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    toc: true
+    theme: cayman
+    highlight: github
+    fig_caption: yes
+  pdf_document:
+    toc: true
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{shinyTempSignal introduction}
+  %\usepackage[utf8]{inputenc}
+---
+
+
+
+```{r include=FALSE}
+knitr::opts_chunk$set(warning = FALSE,
+                      message = TRUE)
+library(yulab.utils)                  
+```
+
+## Introduction
+
+Detecting temporal signals of a phylogenetic tree is crucial for estimating divergence times and ccan also serve as a data quality control measure before applying molecular clock models. The `r CRANpkg("shinyTempSignal")` package implemntes temporal signal analysis under both strict and relaxed molecular clock assumptions and allows exploring temporal signals across the entire tree as well as within different lineages. 
+
+ShinyTempSignal allows regression analysis of various types of data, including measurable biological traits and statistical values obtained from evolutionary analysis. Such a versatile regression analysis is highly beneficial for discovering potential evolutionary patterns and addressing biological questions.
+
+Implementing using R shiny, `r CRANpkg("shinyTempSignal")` provides an interactive interface that allows users to visualize analysis results in real-time and explore data easily. 
+
+
+If you use `r CRANpkg('shinyTemnpSignal')` in published research, please cite the following paper:
+
+
++ L Zhan<sup>#</sup>, X Luo<sup>#</sup>, W Xie<sup>#</sup>, XA Zhu<sup>#</sup>, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, Shuangbin Xu<sup>\*</sup>, __G Yu__<sup>\*</sup>. *shinyTemnpSignal*: an R shiny application for exploring temporal and other phylogenetic signals. __*Journal of Genetics and Genomics*__. 2024.
+
+
+
+## Installation
+
+`r CRANpkg('shinyTemnpSignal')` is available in CRAN and user can use the following command to install it:
+
+```{r eval=FALSE}
+install.packages("shinyTempSignal")
+```
+
+
+## Run the shiny application
+
+After loading the package, users can use the ` run_shinyTempSignal()` command to launch the shiny application.
+
+
+```{r eval=FALSE}
+library(shinyTemnpSignal)
+run_shinyTempSignal()
+```
+
+## Interactive Web Interface
+
+
+### Tree structure exploration panel
+
+![**Exploring tree structure.** Users need to upload a tree file and a corresponding regular expression to extract sampling dates from tip labels through steps (1-5); users can modify the tree plot appearance (6) and select using temporal or phylogenetic signals for detecting outliers (7) which will be shown in a different color of tip points; different panels (8-11) can be selected to present different analysis results.](figures/Figure1.png){width=100%}
+
+### Sample date panel
+
+![**Exploring sampling dates.** This panel is used to present the sampling dates extracted from the tip labels of the tree and the divergence from the tip to the root will also be calculated.](figures/Figure2.png){width=100%}
+
+
+### Temporal signal panel
+
+![**Exploring temporal signal.** This panel displays the root-to-tip regression. Clicking the `autodel` button will delete outliers automatically, and clicking the `Reset` button will restore the original tree. Users can choose an interesting clade by entering a selected node number in the `node` text box. The regression equation is displayed in the regression plot, and the corresponding statistics including the intercept, slope, and R-squared will be presented in a table next to the plot.](figures/Figure3.png){width=100%}
+
+
+### Phylogenetic signal panel
+
+![**Exploring phylogenetic signal.** This panel works if users upload corresponding external data. It performs phylogenetic signal analysis that is similar to temporal signal analysis. Users are allowed to select variables for regression analysis. ](figures/Figure4.png){width=100%}
+

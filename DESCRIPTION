@@ -1,6 +1,6 @@
 Package: shinyTempSignal
-Title: Explore Temporal Signal of Molecular Phylogenies
-Version: 0.0.5.001
+Title: Explore Temporal and other Phylogenetic Signals
+Version: 0.0.6
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -9,7 +9,7 @@ Authors@R:
           person(given = "Xuanan", family = "Zhu", email = "1063785553@qq.com", role = "aut"),
           person(given = "Jianfeng", family = "Lin", email = "415186984@qq.com", role = "ctb")
         )
-Description: Sequences sampled at different time points can be used to infer molecular phylogenies on natural time scales, but if the sequences records inaccurate sampling times, that are not the actual sampling times, then it will affect the molecular phylogenetic analysis. This shiny application helps exploring temporal characteristics of the evolutionary trees through linear regression analysis and with the ability to identify and remove incorrect labels.
+Description: Sequences sampled at different time points can be used to infer molecular phylogenies on natural time scales, but if the sequences records inaccurate sampling times, that are not the actual sampling times, then it will affect the molecular phylogenetic analysis. This shiny application helps exploring temporal characteristics of the evolutionary trees through linear regression analysis and with the ability to identify and remove incorrect labels. The method was extended to support exploring other phylogenetic signals under strict and relaxed models.
 License: GPL-3
 Depends: 
     R (>= 3.3.0)
@@ -35,8 +35,13 @@ Suggests:
     conflicted,
     glue,
     htmltools,
+    knitr,
+    prettydoc,
     processx,
-    testthat (>= 3.0.0)
+    rmarkdown,
+    testthat (>= 3.0.0),
+    yulab.utils
+VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3

@@ -20,8 +20,7 @@ sticker:
 	rm Rplots.pdf
 
 build:
-	cd ..;\
-	R CMD build $(PKGSRC)
+	Rscript -e 'devtools::build()'
 
 build2:
 	cd ..;\
