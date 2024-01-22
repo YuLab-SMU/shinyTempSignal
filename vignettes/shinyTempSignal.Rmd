@@ -35,16 +35,16 @@ ShinyTempSignal allows regression analysis of various types of data, including m
 Implementing using R shiny, `r CRANpkg("shinyTempSignal")` provides an interactive interface that allows users to visualize analysis results in real-time and explore data easily. 
 
 
-If you use `r CRANpkg('shinyTemnpSignal')` in published research, please cite the following paper:
+If you use `r CRANpkg('shinyTempSignal')` in published research, please cite the following paper:
 
 
-+ L Zhan<sup>#</sup>, X Luo<sup>#</sup>, W Xie<sup>#</sup>, XA Zhu<sup>#</sup>, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, Shuangbin Xu<sup>\*</sup>, __G Yu__<sup>\*</sup>. *shinyTemnpSignal*: an R shiny application for exploring temporal and other phylogenetic signals. __*Journal of Genetics and Genomics*__. 2024.
++ L Zhan<sup>#</sup>, X Luo<sup>#</sup>, W Xie<sup>#</sup>, XA Zhu<sup>#</sup>, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, Shuangbin Xu<sup>\*</sup>, __G Yu__<sup>\*</sup>. *shinyTempSignal*: an R shiny application for exploring temporal and other phylogenetic signals. __*Journal of Genetics and Genomics*__. 2024, in revision.
 
 
 
 ## Installation
 
-`r CRANpkg('shinyTemnpSignal')` is available in CRAN and user can use the following command to install it:
+`r CRANpkg('shinyTempSignal')` is available in CRAN and user can use the following command to install it:
 
 ```{r eval=FALSE}
 install.packages("shinyTempSignal")
@@ -57,7 +57,7 @@ After loading the package, users can use the ` run_shinyTempSignal()` command to
 
 
 ```{r eval=FALSE}
-library(shinyTemnpSignal)
+library(shinyTempSignal)
 run_shinyTempSignal()
 ```
 
