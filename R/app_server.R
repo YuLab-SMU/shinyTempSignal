@@ -38,6 +38,21 @@
 #' @noRd
 
 app_server <- function(input, output, session)  {
+   observeEvent(input$regression_btn, {
+  df1 <- merged_data()
+  tree <- sub_tree()
+  df <- df1[, c("label", input$x_var, input$y_var)]
+  x <- df1[, input$x_var]
+  y <- df1[, input$y_var]
+
+  names(x) <- names(y) <- df1[, "label"]
+  pic.x <- pic(x, tree)
+  pic.y <- pic(y, tree)
+
+  output$correlation <- renderPrint({
+    print(cor.test(pic.x, pic.y))
+  })
+})
  down_color = "#6a73cf"
     up_color ="#f26115"
 mySetTheme <- function()
