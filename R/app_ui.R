@@ -157,10 +157,9 @@ app_ui <- function(request) {
             ),
             
             box(
-              width = 4,
-              tableOutput("Summary2"),
-              downloadButton("download_dt_2", "download")
-             
+             width = 4,
+              fluidRow(column(width = 12,tableOutput("Summary2")), downloadButton("download_dt_2", "download")),
+              fluidRow(column(width = 12,verbatimTextOutput("correlation")))
               
             ),
             box(
