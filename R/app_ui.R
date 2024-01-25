@@ -75,12 +75,12 @@ app_ui <- function(request) {
             box(
               plotOutput("plot1", click = "plotClick"),
               width = 8,
-              downloadButton("downloadplot1", "download")
+              height = 750              
             ),
-            
-            
+                       
             box(
               width = 4,
+              height = 750,
               textInput("node", "subset_node"),
               sliderInput("height", "height:", 0, 5000, 380),
               textInput("color3",
@@ -99,8 +99,8 @@ app_ui <- function(request) {
           "choose the point to display in the tree",
           choiceNames = list("only_tree","Temporal_signal", "Phylogenetic_signal"),
           choiceValues = list("only_tree","Temporal_signal", "Phylogenetic_signal")
-        )
-              
+        ),
+              downloadButton("downloadplot1", "download")    
             )
             
           ),
