@@ -8,7 +8,6 @@
 #' @import Cairo
 #
 #' @importFrom shinyjs toggle
-#' @rawNamespace import(ggpubr, except = rotate)
 #' @rawNamespace import(ape, except = rotate)
 #' @importFrom ggtree rotate
 #' @importFrom treeio read.beast

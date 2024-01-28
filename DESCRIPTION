@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal and Other Phylogenetic Signals
-Version: 0.0.6.002
+Version: 0.0.6.003
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -21,7 +21,6 @@ Imports:
     forecast,
     ggplot2,
     ggprism,
-    ggpubr,
     ggpmisc,
     ggtree,
     golem (>= 0.3.1),
