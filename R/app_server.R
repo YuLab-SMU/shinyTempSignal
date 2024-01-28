@@ -5,7 +5,7 @@
 #' @import shiny
 #' @import ggtree
 #' @import ggplot2
-#' @import stringr
+#' @import yulab.utils
 #' @import ggprism
 #' @import Cairo
 #' @import ggpmisc
