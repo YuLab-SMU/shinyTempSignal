@@ -5,10 +5,7 @@
 #' @import shiny
 #' @import ggtree
 #' @import ggplot2
-#' @import yulab.utils
-#' @import ggprism
 #' @import Cairo
-#' @import ggpmisc
 #
 #' @importFrom shinyjs toggle
 #' @rawNamespace import(ggpubr, except = rotate)
@@ -29,14 +26,15 @@
 #' @importFrom stats shapiro.test
 #' @importFrom stats ts
 #' @importFrom stats acf
+#' @importFrom stats cor.test
 #' @importFrom DescTools RunsTest
 #' @importFrom stats na.omit
 #' @importFrom stats as.formula
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom utils read.csv
 #' @importFrom utils write.csv
+#' @importFrom yulab.utils str_extract
 #' @noRd
-
 app_server <- function(input, output, session)  {
    observeEvent(input$regression_btn, {
   df1 <- merged_data()
@@ -53,8 +51,12 @@ app_server <- function(input, output, session)  {
     print(cor.test(pic.x, pic.y))
   })
 })
- down_color = "#6a73cf"
-    up_color ="#f26115"
+
+
+down_color = "#6a73cf"
+up_color ="#f26115"
+
+##' @importFrom ggprism theme_prism
 mySetTheme <- function()
   {
     mySetTheme <- theme_prism(base_size = 14, border = TRUE) +
@@ -104,7 +106,7 @@ mySetTheme <- function()
  )
   sub_tree <- eventReactive(
     input$node, {
-#      browser()
+    # browser()
       if(input$node != "") {
         tree <- tree()
         check_node <- as.numeric(input$node)<length(as.phylo(tree)$tip.label)
@@ -121,7 +123,7 @@ mySetTheme <- function()
       tree <- tree()
       get_new_divergence(tree=tree,node=as.numeric(input$node))
     })
-  #1.读入树文件
+  # 1.读入树文件
   tree <- eventReactive(input$fileinput, {
     req(!is.null(input$treefile))
     if (input$filetype=="Newick") {
@@ -142,7 +144,7 @@ mySetTheme <- function()
       updateTextInput(session, "node", value = root_node)
     }
   )
-  #全部在外面取出来不就好了
+  # 全部在外面取出来不就好了
   data <- reactive({
      tree <- sub_tree()
     if (!is.null(tree)){
