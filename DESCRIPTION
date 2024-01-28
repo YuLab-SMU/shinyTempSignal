@@ -15,8 +15,6 @@ Depends:
     R (>= 3.3.0)
 Imports: 
     ape,
-    Cairo,
-    config (>= 0.3.1),
     DescTools,
     forecast,
     ggplot2,
@@ -33,6 +31,7 @@ Imports:
 Suggests:
     attempt,
     conflicted,
+    config (>= 0.3.1),
     glue,
     htmltools,
     knitr,

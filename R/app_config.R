@@ -19,7 +19,6 @@ app_sys <- function(...){
 #' @param config GOLEM_CONFIG_ACTIVE value. If unset, R_CONFIG_ACTIVE. 
 #' If unset, "default".
 #' @param use_parent Logical, scan the parent directory for config file.
-#' 
 #' @noRd
 get_golem_config <- function(
   value, 

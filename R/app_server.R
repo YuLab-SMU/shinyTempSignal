@@ -2,19 +2,23 @@
 #' 
 #' @param input,output,session Internal parameters for {shiny}. 
 #'     DO NOT REMOVE.
-#' @import shiny
 #' @import ggtree
 #' @import ggplot2
-#' @import Cairo
+
 #
 #' @importFrom shinyjs toggle
-#' @rawNamespace import(ape, except = rotate)
 #' @importFrom ggtree rotate
 #' @importFrom treeio read.beast
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
 #' @importFrom ape extract.clade
+#' @importFrom ape pic
+#' @importFrom ape as.phylo
+#' @importFrom ape read.nexus
+#' @importFrom ape drop.tip
+#' @importFrom ape Ntip
+#' @importFrom ape nodepath
 #' @importFrom treeio read.phylip.tree
 #' @importFrom forecast forecast
 #' @importFrom stats cor
