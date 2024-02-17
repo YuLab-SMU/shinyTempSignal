@@ -2,23 +2,23 @@
 #' 
 #' @param input,output,session Internal parameters for {shiny}. 
 #'     DO NOT REMOVE.
-#' @import shiny
 #' @import ggtree
 #' @import ggplot2
-#' @import yulab.utils
-#' @import ggprism
-#' @import Cairo
-#' @import ggpmisc
+
 #
 #' @importFrom shinyjs toggle
-#' @rawNamespace import(ggpubr, except = rotate)
-#' @rawNamespace import(ape, except = rotate)
 #' @importFrom ggtree rotate
 #' @importFrom treeio read.beast
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
 #' @importFrom ape extract.clade
+#' @importFrom ape pic
+#' @importFrom ape as.phylo
+#' @importFrom ape read.nexus
+#' @importFrom ape drop.tip
+#' @importFrom ape Ntip
+#' @importFrom ape nodepath
 #' @importFrom treeio read.phylip.tree
 #' @importFrom forecast forecast
 #' @importFrom stats cor
@@ -29,15 +29,17 @@
 #' @importFrom stats shapiro.test
 #' @importFrom stats ts
 #' @importFrom stats acf
+#' @importFrom stats cor.test
 #' @importFrom DescTools RunsTest
 #' @importFrom stats na.omit
 #' @importFrom stats as.formula
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom utils read.csv
 #' @importFrom utils write.csv
+#' @importFrom yulab.utils str_extract
 #' @importFrom  nlme gls
+>>>>>>> f57e04a5794460c7278e7b54b42af22e340b5a37
 #' @noRd
-
 app_server <- function(input, output, session)  {
   update_group <- function(tree, data_all, nodes) {
     plot_data <- NULL
@@ -107,8 +109,16 @@ if (input$cortype=="PIC") {
 
 })
 
+<<<<<<< HEAD
  down_color = "#6a73cf"
     up_color ="#f26115"
+=======
+
+down_color = "#6a73cf"
+up_color ="#f26115"
+
+##' @importFrom ggprism theme_prism
+>>>>>>> f57e04a5794460c7278e7b54b42af22e340b5a37
 mySetTheme <- function()
   {
     mySetTheme <- theme_prism(base_size = 14, border = TRUE) +
@@ -158,7 +168,7 @@ mySetTheme <- function()
  )
   sub_tree <- eventReactive(
     input$node, {
-#      browser()
+    # browser()
       if(input$node != "") {
         tree <- tree()
         check_node <- as.numeric(input$node)<length(as.phylo(tree)$tip.label)
@@ -176,7 +186,7 @@ mySetTheme <- function()
       tree <- tree()
       get_new_divergence(tree=tree,node=as.numeric(input$node))
     })
-  #1.读入树文件
+  # 1.读入树文件
   tree <- eventReactive(input$fileinput, {
     req(!is.null(input$treefile))
     if (input$filetype=="Newick") {
@@ -197,7 +207,7 @@ mySetTheme <- function()
       updateTextInput(session, "node", value = root_node)
     }
   )
-  #全部在外面取出来不就好了
+  # 全部在外面取出来不就好了
   data <- reactive({
      tree <- sub_tree()
     if (!is.null(tree)){

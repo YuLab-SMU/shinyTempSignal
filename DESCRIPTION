@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal and Other Phylogenetic Signals
-Version: 0.0.6.001
+Version: 0.0.6.004
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -15,32 +15,30 @@ Depends:
     R (>= 3.3.0)
 Imports: 
     ape,
-    Cairo,
-    config (>= 0.3.1),
     DescTools,
     forecast,
     ggplot2,
     ggprism,
-    ggpubr,
+    ggpmisc,
     ggtree,
     golem (>= 0.3.1),
     shiny (>= 1.6.0),
     shinydashboard,
     shinyjs,
-    stringr,
+    stats,
     treeio,
-    ggpmisc
+    yulab.utils (>= 0.1.4)
 Suggests:
     attempt,
     conflicted,
+    config (>= 0.3.1),
     glue,
     htmltools,
     knitr,
     prettydoc,
     processx,
     rmarkdown,
-    testthat (>= 3.0.0),
-    yulab.utils
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 7.3.0

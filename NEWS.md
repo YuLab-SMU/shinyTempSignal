@@ -1,5 +1,8 @@
-# shinyTempSignal 0.0.6.001
+# shinyTempSignal 0.0.6.004
 
++ add package level manual (2024-02-06, Tue)
++ remove dependencies (Cairo, config and ggpubr) that are actually not in used (2024-01-29, Mon)
++ import `yulab.utils::str_extract()` instead of `stringr::str_extract()` (2024-01-28, Sun)
 + correlation analysis after controling for phylogenetic signal (2024-01-24, Wed)
 
 # shinyTempSignal 0.0.6
