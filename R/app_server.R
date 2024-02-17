@@ -35,24 +35,78 @@
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom utils read.csv
 #' @importFrom utils write.csv
+#' @importFrom  nlme gls
 #' @noRd
 
 app_server <- function(input, output, session)  {
+  update_group <- function(tree, data_all, nodes) {
+    plot_data <- NULL
+    for (node in nodes) {
+      subtree <- extract.clade(tree, node = node)
+      data_node <- data_all[data_all$label %in% subtree$tip.label, ]
+      data_node$group <- paste("subtree", node, sep = "")
+      plot_data <- rbind(plot_data, data_node)
+    }
+    return(plot_data)
+  }
+
+  observeEvent(input$update_button, {
+    tree <- sub_tree()
+    dt <- data.frame(label=label(),date=date(),divergence=divergence())
+    nodes <- as.numeric(unlist(strsplit(input$multi_node, ",")))
+    plot_data <- update_group(tree=tree, data_all=dt, nodes=nodes)
+    output$multi_regression <- renderPlot(
+  ggplot(plot_data, aes(x = date, y = divergence,color=group)) +
+  geom_point()+
+  geom_smooth(method = lm,se=F) +
+  mySetTheme()+stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+  parse = TRUE)
+    )
+  })
+
+observeEvent(input$update_button2,{
+  tree2 <- sub_tree()
+  dt2 <-merged_data()#this data with the updated divergence 
+  nodes2 <-as.numeric(unlist(strsplit(input$multi_node2, ",")))
+  plot_data2 <- update_group(tree=tree2, data_all=dt2, nodes=nodes2)  
+
+  output$multi_regression2 <- renderPlot(
+  ggplot(plot_data2, aes_string(x = input$x_var, y =input$y_var,color="group")) +
+  geom_point()+
+  geom_smooth(method = lm,se=F) +
+  mySetTheme()+stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+  parse = TRUE)
+    )
+})
+
    observeEvent(input$regression_btn, {
   df1 <- merged_data()
+  row.names(df1) <- df1[,"label"]
   tree <- sub_tree()
   df <- df1[, c("label", input$x_var, input$y_var)]
+
   x <- df1[, input$x_var]
   y <- df1[, input$y_var]
 
   names(x) <- names(y) <- df1[, "label"]
   pic.x <- pic(x, tree)
   pic.y <- pic(y, tree)
-
+  pglsModel <- nlme::gls(as.formula(paste(input$y_var, "~", input$x_var)), correlation = corBrownian(phy = tree),
+                 data = df1, method = "ML")
+if (input$cortype=="PIC") {
+    
   output$correlation <- renderPrint({
     print(cor.test(pic.x, pic.y))
+  })} else if(input$cortype=="PGLS") {
+
+     output$correlation <- renderPrint({
+    
+    print(summary(pglsModel))
   })
+  }
+
 })
+
  down_color = "#6a73cf"
     up_color ="#f26115"
 mySetTheme <- function()
@@ -83,7 +137,7 @@ mySetTheme <- function()
   } else {
     tree <- tree()
   }
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none")+mySetTheme2()
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none")+mySetTheme2()
     x <- as.numeric(input$plotClick$x)
     y <- as.numeric(input$plotClick$y)
     node <- click_node(x, y, p$data)
@@ -115,6 +169,7 @@ mySetTheme <- function()
       }
     }
   )
+
 
   sub_divergence <- eventReactive(
     input$node,{
@@ -290,6 +345,7 @@ observeEvent(input$reset2,{
     req(sub_tree())
   if (input$choose_analysis=="Temporal_signal") {
     tree <- sub_tree()
+    tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
@@ -298,7 +354,7 @@ observeEvent(input$reset2,{
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none")+mySetTheme2()
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none")+mySetTheme2()
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
@@ -315,6 +371,7 @@ observeEvent(input$reset2,{
     p
     } else if (input$choose_analysis=="Phylogenetic_signal") {
       tree <- sub_tree()
+      tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
@@ -326,7 +383,7 @@ observeEvent(input$reset2,{
     
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none")+mySetTheme2()
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none")+mySetTheme2()
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
@@ -344,11 +401,13 @@ observeEvent(input$reset2,{
 
     }else if(input$choose_analysis=="only_tree"){
        tree <- sub_tree()
+       tree_download(tree)
+       tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
 
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none")+mySetTheme2() 
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none")+mySetTheme2() 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {  
       p <- p+ geom_tiplab(size=input$tipsize)
@@ -374,6 +433,18 @@ observeEvent(input$reset2,{
       ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
     }
   )
+ 
+tree_download <- reactiveVal()
+output$tree1 <- downloadHandler(
+  filename = function(){
+    "tree.nwk"
+  },
+  content = function(file){
+    nwk <- tree_download()
+    write.tree(phy=nwk,file=file)
+  }
+)
+
   output$plot3 <- renderPlot({
       # browser()
     df1_1 <- merged_data2()
@@ -479,6 +550,7 @@ observeEvent(input$reset2,{
     # req(sub_tree())
   if (input$choose_analysis=="Temporal_signal") {
     tree <- sub_tree()
+    tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
@@ -487,7 +559,7 @@ observeEvent(input$reset2,{
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none")+mySetTheme2() 
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none")+mySetTheme2() 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
@@ -504,6 +576,7 @@ observeEvent(input$reset2,{
     p
     } else if (input$choose_analysis=="Phylogenetic_signal") {
       tree <- sub_tree()
+      tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
@@ -515,7 +588,7 @@ observeEvent(input$reset2,{
     
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") +mySetTheme2()
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none") +mySetTheme2()
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
@@ -533,11 +606,12 @@ observeEvent(input$reset2,{
 
     }else if(input$choose_analysis=="only_tree"){
        tree <- sub_tree()
+       tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
 
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") +mySetTheme2()
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none") +mySetTheme2()
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {  
       p <- p+ geom_tiplab(size=input$tipsize)
@@ -563,8 +637,19 @@ observeEvent(input$reset2,{
       ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
     }
   )
-  
- 
+
+
+tree_download <- reactiveVal()
+output$tree1 <- downloadHandler(
+  filename = function(){
+    "tree.nwk"
+  },
+  content = function(file){
+    nwk <- tree_download()
+    write.tree(phy=nwk,file=file)
+  }
+)
+
   
   #2.取出日期
   output$datetable <- renderDataTable({
@@ -819,8 +904,8 @@ observeEvent(input$reset2,{
       down.table <- down.table()
       to_drop <- c(down.table$label,up.table$label)
       tip_reduced <- drop.tip(tree, to_drop)
-
-      p <- ggtree(tip_reduced,color=input$color3, size=input$size)+mySetTheme2() 
+      tree_download(tip_reduced)
+      p <- ggtree(tip_reduced,color=input$color3, size=input$size,layout = input$layout)+mySetTheme2() 
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       if (input$tip) {
         p <- p+ geom_tiplab(size=input$tipsize)
@@ -847,6 +932,19 @@ observeEvent(input$reset2,{
     )
     
   })
+
+tree_download <- reactiveVal()
+output$tree1 <- downloadHandler(
+  filename = function(){
+    "tree.nwk"
+  },
+  content = function(file){
+    nwk <- tree_download()
+    write.tree(phy=nwk,file=file)
+  }
+)
+
+
 observeEvent(input$delete2,{
   output$Summary2 <- renderTable({  
       df1 <- need.keep.table()
@@ -959,6 +1057,7 @@ output$plot3 <- renderPlot({
 output$plot1 <- renderPlot({
   if (input$choose_analysis=="Temporal_signal") {
     tree <- sub_tree()
+     tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
@@ -967,7 +1066,7 @@ output$plot1 <- renderPlot({
     down.table <- down.table()
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none")+mySetTheme2() 
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none")+mySetTheme2() 
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
@@ -984,6 +1083,7 @@ output$plot1 <- renderPlot({
     p
     } else if (input$choose_analysis=="Phylogenetic_signal") {
       tree <- sub_tree()
+      tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
@@ -995,7 +1095,7 @@ output$plot1 <- renderPlot({
     
     d <- rbind(up.table,down.table)
     all <- merge(d,df,by='label',all = T)
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") +mySetTheme2()
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none") +mySetTheme2()
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {
       
@@ -1013,11 +1113,12 @@ output$plot1 <- renderPlot({
 
     }else if(input$choose_analysis=="only_tree"){
        tree <- sub_tree()
+       tree_download(tree)
     if (is.null(tree)) {
       return(NULL)
     }
 
-    p <- ggtree(tree,color=input$color3, size=input$size)+theme(legend.position="none") +mySetTheme2()
+    p <- ggtree(tree,color=input$color3, size=input$size,layout = input$layout)+theme(legend.position="none") +mySetTheme2()
     if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
     if (input$tip) {  
       p <- p+ geom_tiplab(size=input$tipsize)
@@ -1043,6 +1144,19 @@ output$plot1 <- renderPlot({
       ggsave(file, p, device = "pdf")  # 使用ggsave保存图表为pdf文件
     }
   )
+
+ 
+tree_download <- reactiveVal()
+output$tree1 <- downloadHandler(
+  filename = function(){
+    "tree.nwk"
+  },
+  content = function(file){
+    nwk <- tree_download()
+    write.tree(phy=nwk,file=file)
+  }
+)
+
 output$plot2 <- renderPlot({
   df1 <- data2_1()
   sub_divergence <- sub_divergence()
@@ -1202,8 +1316,8 @@ output$plot2 <- renderPlot({
   existing_data <-reactive({
     divergence <- divergence()
     label <- label()
-    df <- data.frame(label=label,divergence=divergence)
-    
+    date <- date()
+    df <- data.frame(label=label,divergence=divergence,date=date)
     return(df)
   })
   data2 <- reactive({
