@@ -37,8 +37,7 @@
 #' @importFrom utils read.csv
 #' @importFrom utils write.csv
 #' @importFrom yulab.utils str_extract
-#' @importFrom  nlme gls
->>>>>>> f57e04a5794460c7278e7b54b42af22e340b5a37
+#' @importFrom nlme gls
 #' @noRd
 app_server <- function(input, output, session)  {
   update_group <- function(tree, data_all, nodes) {
