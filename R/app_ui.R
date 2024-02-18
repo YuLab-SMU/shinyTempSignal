@@ -6,7 +6,7 @@
 #' @import shinydashboard
 
 #' @importFrom shinyjs useShinyjs
-#' @importFrom shinyWidgets::colorPickr
+#' @importFrom shinyWidgets colorPickr
 
 app_ui <- function(request) {
   tagList(
@@ -85,10 +85,10 @@ app_ui <- function(request) {
               sliderInput("height", "figure height:", 0, 5000, 835),
               fluidRow(
                 column(width = 6,textInput("node", "subset_node")),
-                column(width = 6,shinyWidgets::colorPickr("color3",label="line color:", selected  = "#020202"))),
+                column(width = 6,colorPickr("color3",label="line color:", selected  = "#020202"))),
               fluidRow(
-              column(width = 6,shinyWidgets::colorPickr( "down_color",label="down_color",selected  =  "#6a73cf")),
-              column(width = 6,shinyWidgets::colorPickr( "up_color",label="up_color",selected  ="#f26115" ))
+              column(width = 6,colorPickr( "down_color",label="down_color",selected  =  "#6a73cf")),
+              column(width = 6,colorPickr( "up_color",label="up_color",selected  ="#f26115" ))
               ),
               sliderInput("size","line size:", 0, 10, 1, step = 0.1),
               
