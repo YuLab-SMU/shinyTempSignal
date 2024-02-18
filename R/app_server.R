@@ -82,7 +82,7 @@ observeEvent(input$update_button2,{
 })
 
    observeEvent(input$regression_btn, {
-    browser()
+ 
   df1 <- merged_data()
   row.names(df1) <- df1[,"label"]
   tree <- sub_tree()
