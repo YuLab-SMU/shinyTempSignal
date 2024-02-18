@@ -6,7 +6,8 @@
 #' @import shinydashboard
 
 #' @importFrom shinyjs useShinyjs
-#' @noRd
+#' @importFrom shinyWidgets::colorPickr
+
 app_ui <- function(request) {
   tagList(
     dashboardPage(
@@ -81,32 +82,42 @@ app_ui <- function(request) {
             box(
               width = 4,
               height = 850,
-              textInput("node", "subset_node"),
-              sliderInput("height", "height:", 0, 5000, 380),
-              textInput("color3",
-                        "color:", value = "black"),
-              sliderInput("size",
-                          "size:", 0, 10, 1, step = 0.1),
+              sliderInput("height", "figure height:", 0, 5000, 835),
+              fluidRow(
+                column(width = 6,textInput("node", "subset_node")),
+                column(width = 6,shinyWidgets::colorPickr("color3",label="line color:", selected  = "#020202"))),
+              fluidRow(
+              column(width = 6,shinyWidgets::colorPickr( "down_color",label="down_color",selected  =  "#6a73cf")),
+              column(width = 6,shinyWidgets::colorPickr( "up_color",label="up_color",selected  ="#f26115" ))
+              ),
+              sliderInput("size","line size:", 0, 10, 1, step = 0.1),
               
-              checkboxInput("tip", "tiplab", FALSE),
-              checkboxInput("tip_point", "tip_point", FALSE),
-             radioButtons(
-          inputId = "layout",
-          "choose your interested layout",
-          choiceNames = list("rectangular","roundrect", "slanted","circular", "daylight"),
-          choiceValues = list("rectangular","roundrect", "slanted","circular", "daylight")
-        ),
-              checkboxInput("geom_nodelab", "node number", TRUE),
-              sliderInput("tipsize",
-                          "tiplab_size:",
+            fluidRow(
+              column(width = 4,checkboxInput("tip_point", "tip_point", FALSE)),
+              column(width = 4,checkboxInput("tip", "tiplab", FALSE)),
+              column(width = 4, checkboxInput("geom_nodelab", "node number", TRUE))),
+              sliderInput("tipsize","tip_point_size:",
                           0, 10, 3, step = 0.1),
+             fluidRow(column(width = 6,radioButtons(
+          inputId = "layout",
+          "tree layout",
+          choiceNames = list("rectangular","roundrect", "slanted","circular", "daylight","ellipse","fan"),
+          choiceValues = list("rectangular","roundrect", "slanted","circular", "daylight","ellipse","fan")
+        )),
+        column(width = 6,radioButtons(inputId = "line_type","tree line type",
+        choiceNames = list("solid","twodash","longdash","dotted","dashed","dotted","blank"),
+        choiceValues = list("solid","twodash","longdash","dotted","dashed","dotted","blank")
+        ))
+        ),
+             
+              
               radioButtons(
           inputId = "choose_analysis",
           "choose the point to display in the tree",
           choiceNames = list("only_tree","Temporal_signal", "Phylogenetic_signal"),
           choiceValues = list("only_tree","Temporal_signal", "Phylogenetic_signal")
         ),
-              downloadButton("downloadplot1", "download"),
+              downloadButton("downloadplot1", "download(pdf)"),
               downloadButton("tree1", "download(newick)"),    
             )
             
