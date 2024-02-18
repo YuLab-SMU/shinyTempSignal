@@ -483,7 +483,7 @@ output$tree1 <- downloadHandler(
       geom_point(data=df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_smooth(data=df, aes_string(x = input$x_var, y =input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color()) +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
@@ -498,7 +498,7 @@ output$tree1 <- downloadHandler(
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color()) +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
@@ -721,7 +721,7 @@ output$tree1 <- downloadHandler(
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
       geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color()) +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme()
       plotd2(p)
@@ -735,7 +735,7 @@ output$tree1 <- downloadHandler(
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
       geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color()) +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme() 
       plotd2(p)
@@ -754,7 +754,7 @@ output$tree1 <- downloadHandler(
   #     geom_point() +
   #     geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
   #     geom_point(data = down.table, aes(x = date, y = divergence), color = down_color()) +
-  #     geom_point(data = up.table,aes(x = date, y = divergence), color =up_color)+
+  #     geom_point(data = up.table,aes(x = date, y = divergence), color =up_color())+
   #     # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
   #     mySetTheme() +
   #     stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
@@ -1187,7 +1187,7 @@ output$plot2 <- renderPlot({
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
       geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color()) +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme()
       plotd2(p)
@@ -1201,7 +1201,7 @@ output$plot2 <- renderPlot({
       geom_smooth(data=df, aes(x = date, y = divergence+sub_divergence),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)+
       geom_point(data = down.table, aes(x = date, y = divergence+sub_divergence), color = down_color()) +
-      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color)+
+      geom_point(data = up.table,aes(x = date, y = divergence+sub_divergence), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme() 
       plotd2(p)
