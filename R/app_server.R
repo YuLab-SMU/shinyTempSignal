@@ -1388,15 +1388,12 @@ output$plot2 <- renderPlot({
       return(exclude.table)
     }else{return(NULL)}
   })
-
+  plotd3 <- reactiveVal()
    regression <- reactive({
     req(input$regression_btn)
     lm(as.formula(paste(input$y_var, "~", input$x_var)), merged_data())
   })
   observeEvent(input$regression_btn,{
-  
- 
- observeEvent(input$regression_btn,{
 df1 <- merged_data()
   req(merged_data())
   output$data_table <- renderDataTable({
@@ -1410,7 +1407,7 @@ df1 <- merged_data()
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color()) +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
@@ -1432,9 +1429,6 @@ df1 <- merged_data()
        print(summary)
     })
 
- })
-
-
 
     output$plot3 <- renderPlot({
       # browser()
@@ -1443,6 +1437,7 @@ df1 <- merged_data()
   sub_divergence <- sub_divergence()
   # x <- as.character(input$x_var)
   # y  <- as.character()
+  # browser()
   p_all2 <- ggplot(df1_1, mapping = aes_string(x=input$x_var ,y=input$y_var)) +
       geom_point(colour="gray") +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour="gray")
@@ -1459,7 +1454,7 @@ df1 <- merged_data()
       geom_point(data=df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_smooth(data=df, aes_string(x = input$x_var, y =input$y_var),method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color()) +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
@@ -1474,7 +1469,7 @@ df1 <- merged_data()
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
       geom_point(data = need.down.table, aes_string(x = input$x_var, y =input$y_var), color = down_color()) +
-      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color)+
+      geom_point(data = need.up.table,aes_string(x = input$x_var, y =input$y_var), color =up_color())+
       # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
       mySetTheme() +
       stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
@@ -1482,7 +1477,7 @@ df1 <- merged_data()
     print(p)
   }
   })
-  plotd3 <- reactiveVal()
+
   
   output$downloadplot3 <- downloadHandler(
     filename = function() {
