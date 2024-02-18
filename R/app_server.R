@@ -375,12 +375,12 @@ observeEvent(input$reset2,{
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }
     plotd1(p)
     p
@@ -404,12 +404,12 @@ observeEvent(input$reset2,{
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }
     plotd1(p)
     p
@@ -564,6 +564,7 @@ output$tree1 <- downloadHandler(
     # browser()
     # req(sub_tree())
   if (input$choose_analysis=="Temporal_signal") {
+    # browser()
     tree <- sub_tree()
     tree_download(tree)
     if (is.null(tree)) {
@@ -580,12 +581,12 @@ output$tree1 <- downloadHandler(
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }
     plotd1(p)
     p
@@ -609,12 +610,12 @@ output$tree1 <- downloadHandler(
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }
     plotd1(p)
     p
@@ -1087,12 +1088,12 @@ output$plot1 <- renderPlot({
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }
     plotd1(p)
     p
@@ -1116,12 +1117,12 @@ output$plot1 <- renderPlot({
       
       p <- p+ geom_tiplab(size=input$tipsize)
       p <- p%<+%all+geom_tiplab(aes(color=category))+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }else if(input$tip_point){
       if(input$geom_nodelab){p <- p+geom_nodelab(aes(label=node),hjust=-.3)}
       p <- p%<+%all+ geom_tippoint(aes(color=category),size=input$tipsize)+
         geom_tippoint(aes(color=category),size=input$tipsize)+
-        scale_color_manual(values = c("up" = up_color, "down" = down_color()))
+        scale_color_manual(values = c("up" = up_color(), "down" = down_color()))
     }
     plotd1(p)
     p
