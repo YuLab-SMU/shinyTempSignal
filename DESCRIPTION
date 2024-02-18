@@ -15,7 +15,6 @@ Depends:
     R (>= 3.3.0)
 Imports: 
     ape,
-    DescTools,
     forecast,
     ggplot2,
     ggprism,
@@ -42,7 +41,7 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 7.3.0
+RoxygenNote: 7.3.1
 Config/testthat/edition: 3
 URL: https://github.com/YuLab-SMU/shinyTempSignal
 BugReports: https://github.com/YuLab-SMU/shinyTempSignal/issues

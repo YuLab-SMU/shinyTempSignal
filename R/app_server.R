@@ -13,7 +13,7 @@
 #' @importFrom ape extract.clade
 #' @importFrom ape pic
 #' @importFrom ape as.phylo
-#' @importFrom ape read.nexus
+#' @importFrom ape read.nexus write.tree
 #' @importFrom ape drop.tip
 #' @importFrom ape Ntip
 #' @importFrom ape nodepath
@@ -28,7 +28,6 @@
 #' @importFrom stats ts
 #' @importFrom stats acf
 #' @importFrom stats cor.test
-#' @importFrom DescTools RunsTest
 #' @importFrom stats na.omit
 #' @importFrom stats as.formula
 #' @importFrom ggpmisc stat_poly_eq
@@ -58,7 +57,7 @@ app_server <- function(input, output, session)  {
     nodes <- as.numeric(unlist(strsplit(input$multi_node, ",")))
     plot_data <- update_group(tree=tree, data_all=dt, nodes=nodes)
     output$multi_regression <- renderPlot(
-  ggplot(plot_data, aes(x = date, y = divergence,color=group)) +
+  ggplot(plot_data, aes_string(x = "date", y = "divergence", color="group")) +
   geom_point()+
   geom_smooth(method = lm,se=F) +
   mySetTheme()+stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
@@ -94,7 +93,7 @@ observeEvent(input$update_button2,{
   names(x) <- names(y) <- df1[, "label"]
   pic.x <- pic(x, tree)
   pic.y <- pic(y, tree)
-  pglsModel <- nlme::gls(as.formula(paste(input$y_var, "~", input$x_var)), correlation = corBrownian(phy = tree),
+  pglsModel <- nlme::gls(as.formula(paste(input$y_var, "~", input$x_var)), correlation = ape::corBrownian(phy = tree),
                  data = df1, method = "ML")
 if (input$cortype=="PIC") {
     
@@ -113,7 +112,7 @@ if (input$cortype=="PIC") {
 down_color = "#6a73cf"
 up_color ="#f26115"
 
-
+##' @importFrom ggprism theme_prism
 mySetTheme <- function()
   {
     mySetTheme <- theme_prism(base_size = 14, border = TRUE) +
