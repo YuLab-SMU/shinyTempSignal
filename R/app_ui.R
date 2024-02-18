@@ -75,12 +75,12 @@ app_ui <- function(request) {
             box(
               plotOutput("plot1", click = "plotClick"),
               width = 8,
-              height = 750              
+              height = 850              
             ),
                        
             box(
               width = 4,
-              height = 750,
+              height = 850,
               textInput("node", "subset_node"),
               sliderInput("height", "height:", 0, 5000, 380),
               textInput("color3",
@@ -88,8 +88,14 @@ app_ui <- function(request) {
               sliderInput("size",
                           "size:", 0, 10, 1, step = 0.1),
               
-              checkboxInput("tip", "tiplab:", FALSE),
-              checkboxInput("tip_point", "tip_point:", FALSE),
+              checkboxInput("tip", "tiplab", FALSE),
+              checkboxInput("tip_point", "tip_point", FALSE),
+             radioButtons(
+          inputId = "layout",
+          "choose your interested layout",
+          choiceNames = list("rectangular","roundrect", "slanted","circular", "daylight"),
+          choiceValues = list("rectangular","roundrect", "slanted","circular", "daylight")
+        ),
               checkboxInput("geom_nodelab", "node number", TRUE),
               sliderInput("tipsize",
                           "tiplab_size:",
@@ -100,7 +106,8 @@ app_ui <- function(request) {
           choiceNames = list("only_tree","Temporal_signal", "Phylogenetic_signal"),
           choiceValues = list("only_tree","Temporal_signal", "Phylogenetic_signal")
         ),
-              downloadButton("downloadplot1", "download")    
+              downloadButton("downloadplot1", "download"),
+              downloadButton("tree1", "download(newick)"),    
             )
             
           ),
@@ -114,7 +121,7 @@ app_ui <- function(request) {
               column(width = 3,actionButton("delete", "autodel")),
               column(width = 3,actionButton("reset", "Reset")),
               column(width = 3,textInput("temp_node","node",value = ""))),
-              checkboxInput("plot_all", "plot whole tree regression", TRUE),
+              fluidRow(checkboxInput("plot_all", "plot whole tree regression", TRUE)),
               fluidRow(column(
                 6, numericInput("pvalue", "pvalue<:",    
                                 value = "0.05")
@@ -131,6 +138,10 @@ app_ui <- function(request) {
               tableOutput("Summary"),
               downloadButton("download_dt2", "download")
             ),
+            box(width = 8,plotOutput("multi_regression")),
+            box(width = 4,
+            textInput("multi_node","input multi nodes(comma-separated)"),
+            actionButton("update_button","submit nodes")),
             box(width = 12,
             dataTableOutput("dataframe"),
             downloadButton("download2.table", "download")),
@@ -147,7 +158,7 @@ app_ui <- function(request) {
               fluidRow(
                 column(3,selectInput("x_var", "please choose your x var", choices = NULL),),
                 column(3, selectInput("y_var", "please choose your Y var", choices = NULL),),
-                column(3,actionButton("regression_btn", "regression_analysis")),
+                column(3,actionButton("regression_btn", "update_regression_analysis")),
                 column(3,checkboxInput("plot_all2", "plot whole tree regression", TRUE))
                 ),
                 fluidRow(
@@ -155,13 +166,22 @@ app_ui <- function(request) {
                 column(width = 3,actionButton("reset2", "Reset")),
                 column(width = 3,textInput("phylo_node","node",value = "")))
             ),
-            
+         
             box(
              width = 4,
               fluidRow(column(width = 12,tableOutput("Summary2")), downloadButton("download_dt_2", "download")),
-              fluidRow(column(width = 12,verbatimTextOutput("correlation")))
+              fluidRow(column(width = 12,verbatimTextOutput("correlation"))),
+               radioButtons(
+          inputId = "cortype",
+          "choose your correltion type",
+          choiceNames = list("PIC", "PGLS"),
+          choiceValues = list("PIC", "PGLS")
+        )
               
             ),
+            box(width = 8,plotOutput("multi_regression2")),
+            box(width = 4,textInput("multi_node2"," input multi nodes(comma-separated)"),
+                          actionButton("update_button2","submit nodes")),
             box(
               width = 12,
               dataTableOutput("out_dataframe"),
