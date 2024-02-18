@@ -257,6 +257,17 @@ divergence_all <- reactive({
       return(NULL)
     }
   })
+   date_all<- reactive({
+     tree <- tree()
+    if (!is.null(tree)){
+      tree <- tree %>% as.phylo()
+      date <-dateType3(tree = tree,pattern = input$regression)
+      date <- dateNumeric(date = date,format = input$format)
+      return(date)
+    }else{
+      return(NULL)
+    }
+  })
 label_all<-reactive({
      tree <- tree()
     if (!is.null(tree)){
@@ -1198,23 +1209,7 @@ output$plot2 <- renderPlot({
   }
 
   
-  #  tree <- sub_tree()
-  #   if (is.null(tree)) {
-  #     return()
-  #   }
-  #   df <- data()
-  #   up.table <- up.table()
-  #   down.table <- down.table()
-  #   p <- ggplot(df, aes(x = date, y = divergence)) +
-  #     geom_point() +
-  #     geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
-  #     geom_point(data = down.table, aes(x = date, y = divergence), color = down_color) +
-  #     geom_point(data = up.table,aes(x = date, y = divergence), color =up_color)+
-  #     # geom_text(data = d, aes(x = date, y = divergence, label = label)) +
-  #     mySetTheme() +
-  #     stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE)
-  #   plotd2(p)
-  #   print(p)
+
   })
 
     plotd2 <- reactiveVal()
@@ -1301,22 +1296,6 @@ output$plot2 <- renderPlot({
     }
   )
   
-
-
-  # data2_1 <- reactive({
-  #    tree <- tree()
-  #   if (!is.null(tree)){
-  #     tree <- tree %>% as.phylo()
-  #     date <-dateType3(tree = tree,pattern = input$regression)
-  #     date <- dateNumeric(date = date,format = input$format)
-  #     divergence <- getdivergence(tree = tree)
-  #     df <- cbind(label=tree$tip.label,date=date,divergence=divergence)|>as.data.frame()
-  #     return(df)
-  #   }else{
-  #     return(NULL)
-  #   }
-    
-  # })
   existing_data <-reactive({
     divergence <- divergence()
     label <- label()
@@ -1342,8 +1321,8 @@ output$plot2 <- renderPlot({
     }
   })
  observeEvent(merged_data(), {
-    updateSelectInput(session, "x_var", choices = colnames(merged_data()))
-    updateSelectInput(session, "y_var", choices = colnames(merged_data()))
+    updateSelectInput(session, "x_var", choices = colnames(merged_data()),selected = colnames(merged_data())[2])
+    updateSelectInput(session, "y_var", choices = colnames(merged_data()),selected = colnames(merged_data())[3])
   })
  estimate2 <- function(lm,p){
     rst <- rstudent(lm)
@@ -1365,7 +1344,8 @@ output$plot2 <- renderPlot({
   req(data2)
   divergence_all <- divergence_all()
   label_all <- label_all()
-  data_all <- data.frame(label=label_all,divergence=divergence_all)
+  date_all <- date_all()
+  data_all <- data.frame(label=label_all,divergence=divergence_all,date=date_all)
   if (!is.null(data2())) {
       data_out <- data2()
       # data_all <- data2_1()
@@ -1414,17 +1394,18 @@ output$plot2 <- renderPlot({
     lm(as.formula(paste(input$y_var, "~", input$x_var)), merged_data())
   })
   observeEvent(input$regression_btn,{
-      
-  output$data_table <- renderDataTable({
-    req(merged_data())
-    merged_data()
-  })
+  
  
  observeEvent(input$regression_btn,{
 df1 <- merged_data()
+  req(merged_data())
+  output$data_table <- renderDataTable({
+    merged_data()
+  })
     df <- df1[,c("label",input$x_var,input$y_var)]
     need.up.table <- need.up.table()
     need.down.table <- need.down.table()
+    req(!identical(input$x_var,input$y_var))
     p <- ggplot(df, aes_string(x = input$x_var, y =input$y_var)) +
       geom_point() +
       geom_smooth(method = "lm", se = FALSE, formula = y ~ x,colour=input$color2) +
@@ -1451,38 +1432,9 @@ df1 <- merged_data()
        print(summary)
     })
 
-    # output$Summary2 <- renderTable({  
-  #     date <- date()|> unlist()|>as.numeric()
-  #     divergence <- divergence()|>unlist()|>as.numeric()
-  #     df <- cbind(divergence, date)|>as.data.frame()
-  #     if (input$format == "yy" | input$format == "yyyy") {
-  #       range <- max(date) - min(date)
-  #     }
-  #     else{
-  #       range <- max(date) - min(date)
-  #       range <- range * 365
-  #     }
-  #     ##make a summary and output
-  #     summary <- data.frame(Dated.tips=c("Date range", "Slope(rate)", 
-  #                                        "X-Intercept", "Correlation", 
-  #                                        "R squared", "RSE"), value=numeric(6))
-  #     summary[1, 2] <- range
-  #     summary[4, 2] <- as.numeric(cor(date, divergence))
-  #     lm.rtt <- lm(df)
-  #     summary[2, 2] <- as.numeric(lm.rtt$coefficients[2])
-  #     summary[3, 2] <- as.numeric(
-  #       abs(lm.rtt$coefficients[1])) / as.numeric(lm.rtt$coefficients[2])
-  #     summary[5, 2] <- summary(lm.rtt)$r.squared
-  #     summary[6, 2] <- summary(lm.rtt)[["sigma"]]
-  #     # summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
-  #     # summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
-  #     table_dt(summary)
-  #     print(summary)
-  #   },
-  #   digits = 5, width = 8)
  })
 
-# data2_1
+
 
     output$plot3 <- renderPlot({
       # browser()
