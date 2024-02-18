@@ -75,12 +75,12 @@ app_ui <- function(request) {
             box(
               plotOutput("plot1", click = "plotClick"),
               width = 8,
-              height = 750              
+              height = 850              
             ),
                        
             box(
               width = 4,
-              height = 750,
+              height = 850,
               textInput("node", "subset_node"),
               sliderInput("height", "height:", 0, 5000, 380),
               textInput("color3",

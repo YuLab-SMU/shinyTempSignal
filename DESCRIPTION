@@ -27,7 +27,8 @@ Imports:
     shinyjs,
     stats,
     treeio,
-    yulab.utils (>= 0.1.4)
+    yulab.utils (>= 0.1.4),
+    nlme
 Suggests:
     attempt,
     conflicted,

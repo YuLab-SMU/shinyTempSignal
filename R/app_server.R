@@ -4,8 +4,6 @@
 #'     DO NOT REMOVE.
 #' @import ggtree
 #' @import ggplot2
-
-#
 #' @importFrom shinyjs toggle
 #' @importFrom ggtree rotate
 #' @importFrom treeio read.beast
@@ -38,8 +36,11 @@
 #' @importFrom utils write.csv
 #' @importFrom yulab.utils str_extract
 #' @importFrom nlme gls
-#' @noRd
+#' @importFrom ggprism theme_prism
+#' @importFrom treeio write.tree
+#' @importFrom ape corBrownian
 app_server <- function(input, output, session)  {
+  group <- corBrownian <- NULL
   update_group <- function(tree, data_all, nodes) {
     plot_data <- NULL
     for (node in nodes) {
@@ -81,6 +82,7 @@ observeEvent(input$update_button2,{
 })
 
    observeEvent(input$regression_btn, {
+    browser()
   df1 <- merged_data()
   row.names(df1) <- df1[,"label"]
   tree <- sub_tree()
@@ -108,16 +110,10 @@ if (input$cortype=="PIC") {
 
 })
 
-<<<<<<< HEAD
- down_color = "#6a73cf"
-    up_color ="#f26115"
-=======
-
 down_color = "#6a73cf"
 up_color ="#f26115"
 
-##' @importFrom ggprism theme_prism
->>>>>>> f57e04a5794460c7278e7b54b42af22e340b5a37
+
 mySetTheme <- function()
   {
     mySetTheme <- theme_prism(base_size = 14, border = TRUE) +
