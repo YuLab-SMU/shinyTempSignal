@@ -1,10 +1,14 @@
-# shinyTempSignal 0.0.6.004
+# shinyTempSignal 0.0.7
 
++ supports more parameters for tree visualization (2024-02-19, Mon)
++ allows visualizing regressions for multiple subtrees and allows downloading tree after removing outliers (2024-02-18, Sun, #35)
 + add package level manual (2024-02-06, Tue)
 + remove dependencies (Cairo, config and ggpubr) that are actually not in used (2024-01-29, Mon)
 + import `yulab.utils::str_extract()` instead of `stringr::str_extract()` (2024-01-28, Sun)
-+ correlation analysis after controling for phylogenetic signal (2024-01-24, Wed)
-
++ correlation analysis after controling for phylogenetic signal 
+    - PGLS method (2024-02-18, Sun, #35)
+    - PIC method (2024-01-24, Wed, #32)
+    
 # shinyTempSignal 0.0.6
 
 + add vignette (2024-01-20, Sat)

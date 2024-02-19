@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal and Other Phylogenetic Signals
-Version: 0.0.6.004
+Version: 0.0.7
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -24,6 +24,7 @@ Imports:
     shiny (>= 1.6.0),
     shinydashboard,
     shinyjs,
+    shinyWidgets,
     stats,
     treeio,
     yulab.utils (>= 0.1.4),
