@@ -1,7 +1,8 @@
 #' The application server-side
 #' 
-#' @param input,output,session Internal parameters for {shiny}. 
-#'     DO NOT REMOVE.
+#' @param input Internal parameters
+#' @param output Internal parameters
+#' @param session Internal parameters 
 #' @import ggtree
 #' @import ggplot2
 #' @importFrom shinyjs toggle

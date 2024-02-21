@@ -1,7 +1,6 @@
 #' The application User-Interface
 #'
-#' @param request Internal parameter for `{shiny}`.
-#'     DO NOT REMOVE.
+#' @param request Internal parameter
 #' @import shiny
 #' @import shinydashboard
 

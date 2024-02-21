@@ -7,8 +7,11 @@
 app_server(input, output, session)
 }
 \arguments{
-\item{input, output, session}{Internal parameters for {shiny}. 
-DO NOT REMOVE.}
+\item{input}{Internal parameters}
+
+\item{output}{Internal parameters}
+
+\item{session}{Internal parameters}
 }
 \description{
 The application server-side
