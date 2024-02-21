@@ -54,9 +54,7 @@ clean:
 	cd ..;\
 	$(RM) -r $(PKGNAME).Rcheck/
 
-cransubmit:
-	Rscript -e 'devtools::submit_cran()'
-	
+
 gitmaintain:
 	git gc --auto;\
 	git prune -v;\
