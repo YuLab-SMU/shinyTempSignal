@@ -7,11 +7,11 @@
 app_server(input, output, session)
 }
 \arguments{
-\item{input}{Internal parameters}
+\item{input}{Internal parameter}
 
-\item{output}{Internal parameters}
+\item{output}{Internal parameter}
 
-\item{session}{Internal parameters}
+\item{session}{Internal parameter}
 }
 \description{
 The application server-side

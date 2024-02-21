@@ -1,8 +1,8 @@
 #' The application server-side
 #' 
-#' @param input Internal parameters
-#' @param output Internal parameters
-#' @param session Internal parameters 
+#' @param input Internal parameter
+#' @param output Internal parameter
+#' @param session Internal parameter 
 #' @import ggtree
 #' @import ggplot2
 #' @importFrom shinyjs toggle
