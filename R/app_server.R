@@ -1322,9 +1322,20 @@ output$plot2 <- renderPlot({
     }
   })
  observeEvent(merged_data(), {
-    updateSelectInput(session, "x_var", choices = colnames(merged_data()),selected = colnames(merged_data())[2])
-    updateSelectInput(session, "y_var", choices = colnames(merged_data()),selected = colnames(merged_data())[3])
+  # browser()
+    if(input$x_var==""){
+      updateSelectInput(session, "x_var", choices = colnames(merged_data()),selected = colnames(merged_data())[3])
+    }else {
+       updateSelectInput(session, "x_var", choices = colnames(merged_data()),selected =input$x_var)
+    }
+    
+    if(input$y_var==""){
+      updateSelectInput(session, "y_var", choices = colnames(merged_data()),selected = colnames(merged_data())[2])
+    }else {
+       updateSelectInput(session, "y_var", choices = colnames(merged_data()),selected = input$y_var)
+    }
   })
+  
  estimate2 <- function(lm,p){
     rst <- rstudent(lm)
     down <- 0.5-abs(0.5-pt(rst,lm$df.residual))< p / 2&rst<0

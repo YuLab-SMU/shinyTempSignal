@@ -75,7 +75,7 @@ run_shinyTempSignal()
 
 ### Temporal signal panel
 
-![**Exploring temporal signal.** This panel displays the root-to-tip regression.It is divided into two sections. For the upper portion(1), users can interact with the following functionalities:Clicking the `autodel` button will delete outliers automatically, and clicking the `Reset` button will restore the original tree. Users can choose an interesting clade by entering a selected node number in the `node` text box. The regression equation is displayed in the regression plot, and the corresponding statistics including the intercept, slope, and R-squared will be presented in a table next to the plot.As for the lower portion(2),users can simultaneously explore temporal signals by inputting multiple node numbers separated by commas.](figures/Figure3.png){width=100%}
+![**Exploring temporal signal.** This panel displays the root-to-tip regression.It is divided into two sections. For the upper portion(1), users can interact with the following functionalities: Clicking the `autodel` button will delete outliers automatically, and clicking the `Reset` button will restore the original tree. Users can choose an interesting clade by entering a selected node number in the `node` text box. The regression equation is displayed in the regression plot, and the corresponding statistics including the intercept, slope, and R-squared will be presented in a table next to the plot. As for the lower portion(2), users can simultaneously explore temporal signals by inputting multiple node numbers separated by commas.](figures/Figure3.png){width=100%}
 
 
 ### Phylogenetic signal panel
