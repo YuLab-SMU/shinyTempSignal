@@ -1,5 +1,6 @@
 # shinyTempSignal 0.0.7
 
++ keep x and y variables selected by user when entering new node for analysis (2024-02-21, Wed, #37)
 + supports more parameters for tree visualization (2024-02-19, Mon)
 + allows visualizing regressions for multiple subtrees and allows downloading tree after removing outliers (2024-02-18, Sun, #35)
 + add package level manual (2024-02-06, Tue)
