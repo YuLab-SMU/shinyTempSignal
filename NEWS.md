@@ -1,3 +1,7 @@
+# shinyTempSignal 0.0.7.001
+
++ add CITATION (2024-02-23, Fri)
+
 # shinyTempSignal 0.0.7
 
 + keep x and y variables selected by user when entering new node for analysis (2024-02-21, Wed, #37)
