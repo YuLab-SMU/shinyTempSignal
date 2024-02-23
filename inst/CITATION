@@ -1,0 +1,38 @@
+citHeader("To cite shinyTempSignal in publications use:")
+
+bibentry(
+    bibtype  = "article",
+    title  = "treeio: an R package for phylogenetic tree input and output with richly annotated and associated data.",
+    author = c(
+        person("Li", "Zhan"),
+        person("Xiao", "Luo"),
+        person("Wenqin", "Xie"),
+        person("Xuan-An", "Zhu"),
+        person("Zijing", "Xie"),
+        person("Jianfeng", "Lin"),
+        person("Lin", "Li"),
+        person("Wenli", "Tang"),
+        person("Rui", "Wang"),
+        person("Lin", "Deng"),
+        person("Yufan", "Liao"),
+        person("Bingdong", "Liu"),
+        person("Yantong", "Cai"),
+        person("Qianwen", "Wang"),
+        person("Shuangbin", "Xu"),
+        person("Guangchuang", "Yu")
+        ),
+    year    = "2024",
+    journal = "Journal of Genetics and Genomics",
+    volume  = "",
+    issue   = "",
+    number  = "",
+    pages   = "",
+    doi     = "",
+    PMID    = "",
+    url     = "", 
+    textVersion = paste("L Zhan, X Luo, W Xie, XA Zhu, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, S Xu, G Yu.", 
+                    "shinyTempSignal: an R shiny application for exploring temporal and other phylogenetic signals.",
+                    "Journal of Genetics and Genomics 2024, V(I):Pages. doi:xxx")
+)
+
+
