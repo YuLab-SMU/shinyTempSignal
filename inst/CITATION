@@ -27,12 +27,12 @@ bibentry(
     issue   = "",
     number  = "",
     pages   = "",
-    doi     = "",
+    doi     = "10.1016/j.jgg.2024.02.004",
     PMID    = "",
-    url     = "", 
+    url     = "https://www.sciencedirect.com/science/article/pii/S167385272400033X", 
     textVersion = paste("L Zhan, X Luo, W Xie, XA Zhu, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, S Xu, G Yu.", 
                     "shinyTempSignal: an R shiny application for exploring temporal and other phylogenetic signals.",
-                    "Journal of Genetics and Genomics 2024, V(I):Pages. doi:xxx")
+                    "Journal of Genetics and Genomics 2024, V(I):Pages. doi:10.1016/j.jgg.2024.02.004")
 )
 
 

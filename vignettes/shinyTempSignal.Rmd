@@ -38,7 +38,7 @@ Implementing using R shiny, `r CRANpkg("shinyTempSignal")` provides an interacti
 If you use `r CRANpkg('shinyTempSignal')` in published research, please cite the following paper:
 
 
-+ L Zhan<sup>#</sup>, X Luo<sup>#</sup>, W Xie<sup>#</sup>, XA Zhu<sup>#</sup>, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, Shuangbin Xu<sup>\*</sup>, __G Yu__<sup>\*</sup>. *shinyTempSignal*: an R shiny application for exploring temporal and other phylogenetic signals. __*Journal of Genetics and Genomics*__. 2024, accepted.
++ L Zhan<sup>#</sup>, X Luo<sup>#</sup>, W Xie<sup>#</sup>, XA Zhu<sup>#</sup>, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, Shuangbin Xu<sup>\*</sup>, __G Yu__<sup>\*</sup>. *shinyTempSignal*: an R shiny application for exploring temporal and other phylogenetic signals. __*Journal of Genetics and Genomics*__. 2024, doi: [10.1016/j.jgg.2024.02.004](https://doi.org/10.1016/j.jgg.2024.02.004).
 
 
 
