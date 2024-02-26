@@ -2,7 +2,7 @@ citHeader("To cite shinyTempSignal in publications use:")
 
 bibentry(
     bibtype  = "article",
-    title  = "treeio: an R package for phylogenetic tree input and output with richly annotated and associated data.",
+    title  = "shinyTempSignal: an R shiny application for exploring temporal and other phylogenetic signals.",
     author = c(
         person("Li", "Zhan"),
         person("Xiao", "Luo"),
@@ -32,7 +32,7 @@ bibentry(
     url     = "https://www.sciencedirect.com/science/article/pii/S167385272400033X", 
     textVersion = paste("L Zhan, X Luo, W Xie, XA Zhu, Z Xie, J Lin, L Li, W Tang, R Wang, L Deng, Y Liao, B Liu, Y Cai, Q Wang, S Xu, G Yu.", 
                     "shinyTempSignal: an R shiny application for exploring temporal and other phylogenetic signals.",
-                    "Journal of Genetics and Genomics 2024, V(I):Pages. doi:10.1016/j.jgg.2024.02.004")
+                    "Journal of Genetics and Genomics 2024. doi: 10.1016/j.jgg.2024.02.004")
 )
 
 

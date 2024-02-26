@@ -1,26 +1,41 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- To modify Package/Title/Description/Authors fields, edit the DESCRIPTION file -->
 
-# Introduction
+## `shinyTempSignal`: Explore Temporal and Other Phylogenetic Signals
 
-`shinyTempSignal` is an R-shiny package based on `ggtree`, is
-user-friendly tool for Exploring time signals for molecular phylogeny.
+### Sequences sampled at different time points can be used to infer molecular phylogenies on natural time scales, but if the sequences records inaccurate sampling times, that are not the actual sampling times, then it will affect the molecular phylogenetic analysis. This shiny application helps exploring temporal characteristics of the evolutionary trees through linear regression analysis and with the ability to identify and remove incorrect labels. The method was extended to support exploring other phylogenetic signals under strict and relaxed models.
+
+If you use `shinyTempSignal`, please cite:
+
+<!-- Modify this by editing the file: inst/CITATION  -->
+
+> L Zhan, X Luo, W Xie, XA Zhu, Z Xie, J Lin, L Li, W Tang, R Wang, L
+> Deng, Y Liao, B Liu, Y Cai, Q Wang, S Xu, G Yu. shinyTempSignal: an R
+> shiny application for exploring temporal and other phylogenetic
+> signals. Journal of Genetics and Genomics 2024. doi:
+> 10.1016/j.jgg.2024.02.004
+
+## :writing_hand: Authors
+
+YuLab@SMU <https://yulab-smu.top>
 
 ## Installation
 
-You can install `shinyTempSignal` from github using devtools :
+``` r
+# to install cran version
+install.packages("shinyTempSignal")
 
-    if (!requireNamespace("devtools", quietly=TRUE))
-        install.packages("devtools")
-    devtools::install_github("YuLab-SMU/shinyTempSignal")
+# to install github version
+if(!require("remotes")) install.packages("remotes")
 
-# Quick Guides
+remotes::install_github("YuLab-SMU/shinyTempSignal")
+```
 
-    library(shinyTempSignal)
-    run_shinyTempSignal()
+## Usages
 
-# Reference
+``` r
+library(shinyTempSignal)
+run_shinyTempSignal()
+```
 
-***G Yu***,Tommy Tsan-Yuk Lam,Shuangbin Xu,Yonghe Xia, Justin Silverman,
-Bradley Jones, Watal M. Iwasaki,Ruizhu Huang.ggtree:an R package for
-visualization of tree and annotation data.
+<br>
