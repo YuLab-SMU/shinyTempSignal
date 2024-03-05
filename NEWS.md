@@ -1,5 +1,6 @@
-# shinyTempSignal 0.0.7.001
+# shinyTempSignal 0.0.8
 
++ `shinyTempSignal_set_theme()` to allows changing the default theme (2024-03-05, Tue, #38)
 + add CITATION (2024-02-23, Fri)
 
 # shinyTempSignal 0.0.7

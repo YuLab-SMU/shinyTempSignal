@@ -3,7 +3,15 @@
 
 ## `shinyTempSignal`: Explore Temporal and Other Phylogenetic Signals
 
-### Sequences sampled at different time points can be used to infer molecular phylogenies on natural time scales, but if the sequences records inaccurate sampling times, that are not the actual sampling times, then it will affect the molecular phylogenetic analysis. This shiny application helps exploring temporal characteristics of the evolutionary trees through linear regression analysis and with the ability to identify and remove incorrect labels. The method was extended to support exploring other phylogenetic signals under strict and relaxed models.
+Sequences sampled at different time points can be used to infer
+molecular phylogenies on natural time scales, but if the sequences
+records inaccurate sampling times, that are not the actual sampling
+times, then it will affect the molecular phylogenetic analysis. This
+shiny application helps exploring temporal characteristics of the
+evolutionary trees through linear regression analysis and with the
+ability to identify and remove incorrect labels. The method was extended
+to support exploring other phylogenetic signals under strict and relaxed
+models.
 
 If you use `shinyTempSignal`, please cite:
 

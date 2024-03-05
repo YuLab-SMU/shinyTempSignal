@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal and Other Phylogenetic Signals
-Version: 0.0.7.001
+Version: 0.0.8
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),

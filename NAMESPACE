@@ -2,6 +2,7 @@
 
 export(dateNumeric)
 export(run_shinyTempSignal)
+export(shinyTempSignal_set_theme)
 import(ggplot2)
 import(ggtree)
 import(shiny)

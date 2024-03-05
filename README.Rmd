@@ -17,7 +17,7 @@ gh <- sprintf("%s/%s", owner, pkg)
  
 ## ``r pkg``: `r title`
 
-### `r description`
+`r description`
  
 If you use ``r pkg``, please cite: 
 

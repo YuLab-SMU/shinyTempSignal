@@ -19,6 +19,6 @@ Convert dates according to date format
 }
 \examples{
 
-dateNumeric(date="1999-12-07", format="yyyy-MM-dd")
+dateNumeric(date = "1999-12-07", format = "yyyy-MM-dd")
 
 }
