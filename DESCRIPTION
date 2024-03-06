@@ -44,5 +44,5 @@ VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 7.3.1
 Config/testthat/edition: 3
-URL: https://github.com/YuLab-SMU/shinyTempSignal (devel), https://www.sciencedirect.com/science/article/pii/S167385272400033X (publication)
+URL: https://github.com/YuLab-SMU/shinyTempSignal, https://www.sciencedirect.com/science/article/pii/S167385272400033X
 BugReports: https://github.com/YuLab-SMU/shinyTempSignal/issues
