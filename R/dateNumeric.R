@@ -4,7 +4,7 @@
 #' @param format input format of the date, character
 #'
 #' @return Returns a date of numeric type, numeric
-#' @importFrom ggtree Date2decimal
+#' @importFrom treelayout Date2decimal
 #' @export
 #'
 #' @examples

@@ -27,6 +27,7 @@ Imports:
     shinyWidgets,
     stats,
     treeio,
+    treelayout,
     yulab.utils (>= 0.1.4),
     nlme
 Suggests:
