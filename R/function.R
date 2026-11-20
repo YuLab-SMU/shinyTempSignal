@@ -1,9 +1,43 @@
-dateType3 <- function(tree, pattern) {
-  date <- numeric(length(tree$tip.label))
-  for (i in 1:length(tree$tip.label)) {
-    date[i] <- str_extract(tree$tip.label[i], pattern)
+extract_date_match <- function(label, pattern) {
+  matched <- regmatches(label, regexec(pattern, label, perl = TRUE))[[1]]
+  if (length(matched) == 0) {
+    return(NA_character_)
   }
-  return(date)
+  if (length(matched) > 1) {
+    captured <- matched[-1]
+    captured <- captured[!is.na(captured) & nzchar(captured)]
+    if (length(captured) > 0) {
+      return(captured[[1]])
+    }
+  }
+  matched[[1]]
+}
+
+override_tip_dates <- function(labels, date, external_data = NULL) {
+  if (is.null(external_data) || !all(c("label", "date") %in% colnames(external_data))) {
+    return(date)
+  }
+  idx <- match(labels, external_data$label)
+  external_date <- external_data$date[idx]
+  replace <- !is.na(external_date)
+  if (any(replace)) {
+    date[replace] <- external_date[replace]
+  }
+  date
+}
+
+resolve_tip_dates_raw <- function(tree, pattern, external_data = NULL) {
+  date <- vapply(tree$tip.label, extract_date_match, character(1), pattern = pattern)
+  override_tip_dates(tree$tip.label, date, external_data = external_data)
+}
+
+resolve_tip_dates <- function(tree, pattern, format, external_data = NULL) {
+  date <- resolve_tip_dates_raw(tree = tree, pattern = pattern, external_data = external_data)
+  dateNumeric(date = date, format = format)
+}
+
+dateType3 <- function(tree, pattern) {
+  resolve_tip_dates_raw(tree = tree, pattern = pattern)
 }
 ## convert Date to decimal format
 dateNumeric <- function(date, format) {

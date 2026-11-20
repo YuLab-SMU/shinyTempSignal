@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal and Other Phylogenetic Signals
-Version: 0.0.8
+Version: 0.0.9
 Authors@R: 
     	c(person(given = "Guangchuang", family = "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -43,7 +43,7 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 7.3.1
 Config/testthat/edition: 3
 URL: https://github.com/YuLab-SMU/shinyTempSignal, https://www.sciencedirect.com/science/article/pii/S167385272400033X
 BugReports: https://github.com/YuLab-SMU/shinyTempSignal/issues
+Config/roxygen2/version: 8.1.1

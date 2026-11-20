@@ -1,3 +1,7 @@
+# shinyTempSignal 0.0.9
+
++ allow importing sample dates from an external `label`/`date` CSV and prefer capture groups when extracting dates from tip labels, fixing ML/NEXUS date import failures (2026-11-20, Thu, #39)
+
 # shinyTempSignal 0.0.8
 
 + `shinyTempSignal_set_theme()` to allows changing the default theme (2024-03-05, Tue, #38)

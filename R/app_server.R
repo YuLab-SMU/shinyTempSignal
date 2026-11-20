@@ -219,8 +219,7 @@ app_server <- function(input, output, session) {
     tree <- sub_tree()
     if (!is.null(tree)) {
       tree <- tree %>% as.phylo()
-      date <- dateType3(tree = tree, pattern = input$regression)
-      date <- dateNumeric(date = date, format = input$format)
+      date <- resolve_tip_dates(tree = tree, pattern = input$regression, format = input$format, external_data = data2())
       divergence <- getdivergence(tree = tree)
       df <- cbind(label = tree$tip.label, date = date, divergence = divergence)
       return(df)
@@ -232,8 +231,7 @@ app_server <- function(input, output, session) {
     tree <- sub_tree()
     if (!is.null(tree)) {
       tree <- tree %>% as.phylo()
-      date <- dateType3(tree = tree, pattern = input$regression)
-      date <- dateNumeric(date = date, format = input$format)
+      date <- resolve_tip_dates(tree = tree, pattern = input$regression, format = input$format, external_data = data2())
       return(date)
     } else {
       return(NULL)
@@ -273,8 +271,7 @@ app_server <- function(input, output, session) {
     tree <- tree()
     if (!is.null(tree)) {
       tree <- tree %>% as.phylo()
-      date <- dateType3(tree = tree, pattern = input$regression)
-      date <- dateNumeric(date = date, format = input$format)
+      date <- resolve_tip_dates(tree = tree, pattern = input$regression, format = input$format, external_data = data2())
       return(date)
     } else {
       return(NULL)
@@ -725,7 +722,7 @@ app_server <- function(input, output, session) {
       return()
     }
     tree <- tree %>% as.phylo()
-    date <- dateType3(tree = tree, pattern = input$regression)
+    date <- resolve_tip_dates_raw(tree = tree, pattern = input$regression, external_data = data2())
     divergence <- getdivergence(tree = tree)
     df <- cbind(label = tree$tip.label, date = date, divergence = divergence)
     table1(df)
@@ -745,8 +742,7 @@ app_server <- function(input, output, session) {
     tree <- tree()
     if (!is.null(tree)) {
       tree <- tree %>% as.phylo()
-      date <- dateType3(tree = tree, pattern = input$regression)
-      date <- dateNumeric(date = date, format = input$format)
+      date <- resolve_tip_dates(tree = tree, pattern = input$regression, format = input$format, external_data = data2())
       divergence <- getdivergence(tree = tree)
       df <- cbind(label = tree$tip.label, date = date, divergence = divergence)
       return(df)
@@ -1324,7 +1320,7 @@ app_server <- function(input, output, session) {
     for (i in a:b) {
       f <- i - a + 1
       sub.tree[[f]] <- extract.clade(tree, node = i)
-      date[[f]] <- dateType3(sub.tree[[f]], pattern = input$regression) %>% dateNumeric(format = input$format)
+      date[[f]] <- resolve_tip_dates(sub.tree[[f]], pattern = input$regression, format = input$format)
       divergence[[f]] <- getdivergence(tree = sub.tree[[f]])
       df_td[[f]] <- as.data.frame(cbind(date = date[[f]], divergence = divergence[[f]]))
       model.results[[f]] <- if (unique(is.na(divergence[[f]]))) {
@@ -1381,7 +1377,9 @@ app_server <- function(input, output, session) {
     return(df)
   })
   data2 <- reactive({
-    req(input$outdata)
+    if (is.null(input$outdata)) {
+      return(NULL)
+    }
     read.csv(input$outdata$datapath)
   })
 
@@ -1390,7 +1388,11 @@ app_server <- function(input, output, session) {
     # 将上传的表格与现有的表格合并
     if (!is.null(data2())) {
       existing_data <- existing_data()
-      merged <- merge(existing_data, data2(), all.x = TRUE) %>%
+      external_data <- data2()
+      if ("date" %in% colnames(external_data)) {
+        external_data <- external_data[, setdiff(colnames(external_data), "date"), drop = FALSE]
+      }
+      merged <- merge(existing_data, external_data, by = "label", all.x = TRUE) %>%
         unique() %>%
         na.omit()
       merged[, "divergence"] <- merged[, "divergence"] + sub_divergence()

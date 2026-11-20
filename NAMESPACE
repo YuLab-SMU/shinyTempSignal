@@ -7,47 +7,59 @@ import(ggplot2)
 import(ggtree)
 import(shiny)
 import(shinydashboard)
-importFrom(ape,Ntip)
-importFrom(ape,as.phylo)
-importFrom(ape,corBrownian)
-importFrom(ape,drop.tip)
-importFrom(ape,extract.clade)
-importFrom(ape,nodepath)
-importFrom(ape,pic)
-importFrom(ape,read.nexus)
-importFrom(ape,write.tree)
+importFrom(ape,
+  Ntip,
+  as.phylo,
+  corBrownian,
+  drop.tip,
+  extract.clade,
+  nodepath,
+  pic,
+  read.nexus,
+  write.tree
+)
 importFrom(forecast,forecast)
 importFrom(ggpmisc,stat_poly_eq)
 importFrom(ggprism,theme_prism)
 importFrom(ggtree,rotate)
-importFrom(treelayout,Date2decimal)
-importFrom(golem,activate_js)
-importFrom(golem,add_resource_path)
-importFrom(golem,bundle_resources)
-importFrom(golem,favicon)
-importFrom(golem,with_golem_options)
+importFrom(golem,
+  activate_js,
+  add_resource_path,
+  bundle_resources,
+  favicon,
+  with_golem_options
+)
 importFrom(nlme,gls)
 importFrom(shiny,shinyApp)
 importFrom(shinyWidgets,colorPickr)
-importFrom(shinyjs,toggle)
-importFrom(shinyjs,useShinyjs)
-importFrom(stats,acf)
-importFrom(stats,as.formula)
-importFrom(stats,cor)
-importFrom(stats,cor.test)
-importFrom(stats,lm)
-importFrom(stats,na.omit)
-importFrom(stats,pt)
-importFrom(stats,qqnorm)
-importFrom(stats,rstudent)
-importFrom(stats,shapiro.test)
-importFrom(stats,ts)
-importFrom(treeio,merge_tree)
-importFrom(treeio,read.beast)
-importFrom(treeio,read.codeml)
-importFrom(treeio,read.phylip.tree)
-importFrom(treeio,rescale_tree)
-importFrom(treeio,write.tree)
-importFrom(utils,read.csv)
-importFrom(utils,write.csv)
+importFrom(shinyjs,
+  toggle,
+  useShinyjs
+)
+importFrom(stats,
+  acf,
+  as.formula,
+  cor,
+  cor.test,
+  lm,
+  na.omit,
+  pt,
+  qqnorm,
+  rstudent,
+  shapiro.test,
+  ts
+)
+importFrom(treeio,
+  merge_tree,
+  read.beast,
+  read.codeml,
+  read.phylip.tree,
+  rescale_tree,
+  write.tree
+)
+importFrom(treelayout,Date2decimal)
+importFrom(utils,
+  read.csv,
+  write.csv
+)
 importFrom(yulab.utils,str_extract)
