@@ -4,7 +4,6 @@ export(dateNumeric)
 export(run_shinyTempSignal)
 export(shinyTempSignal_set_theme)
 import(ggplot2)
-import(ggtree)
 import(shiny)
 import(shinydashboard)
 importFrom(ape,
@@ -16,12 +15,20 @@ importFrom(ape,
   nodepath,
   pic,
   read.nexus,
+  read.tree,
   write.tree
 )
 importFrom(forecast,forecast)
 importFrom(ggpmisc,stat_poly_eq)
 importFrom(ggprism,theme_prism)
-importFrom(ggtree,rotate)
+importFrom(ggtree,
+  "%<+%",
+  geom_nodelab,
+  geom_tiplab,
+  geom_tippoint,
+  ggtree,
+  rotate
+)
 importFrom(golem,
   activate_js,
   add_resource_path,
@@ -29,6 +36,7 @@ importFrom(golem,
   favicon,
   with_golem_options
 )
+importFrom(magrittr,"%>%")
 importFrom(nlme,gls)
 importFrom(shiny,shinyApp)
 importFrom(shinyWidgets,colorPickr)

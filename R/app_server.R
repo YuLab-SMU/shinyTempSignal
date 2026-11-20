@@ -3,10 +3,15 @@
 #' @param input Internal parameter
 #' @param output Internal parameter
 #' @param session Internal parameter
-#' @import ggtree
 #' @import ggplot2
-#' @importFrom shinyjs toggle
+#' @importFrom magrittr %>%
+#' @importFrom ggtree %<+%
+#' @importFrom ggtree ggtree
+#' @importFrom ggtree geom_nodelab
+#' @importFrom ggtree geom_tiplab
+#' @importFrom ggtree geom_tippoint
 #' @importFrom ggtree rotate
+#' @importFrom shinyjs toggle
 #' @importFrom treeio read.beast
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
@@ -14,7 +19,7 @@
 #' @importFrom ape extract.clade
 #' @importFrom ape pic
 #' @importFrom ape as.phylo
-#' @importFrom ape read.nexus write.tree
+#' @importFrom ape read.nexus read.tree write.tree
 #' @importFrom ape drop.tip
 #' @importFrom ape Ntip
 #' @importFrom ape nodepath
