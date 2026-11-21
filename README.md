@@ -20,9 +20,8 @@ If you use `shinyTempSignal`, please cite:
 > L Zhan, X Luo, W Xie, XA Zhu, Z Xie, J Lin, L Li, W Tang, R Wang, L
 > Deng, Y Liao, B Liu, Y Cai, Q Wang, S Xu, G Yu. shinyTempSignal: an R
 > shiny application for exploring temporal and other phylogenetic
-> signals. Journal of Genetics and Genomics 2024. doi:
-> 10.1016/j.jgg.2024.02.004  
-> [DOI](https://doi.org/10.1016/j.jgg.2024.02.004)
+> signals. Journal of Genetics and Genomics 2024.
+> \[10.1016/j.jgg.2024.02.004\](<https://doi.org/10.1016/j.jgg.2024.02.004>
 
 ## :writing_hand: Authors
 
