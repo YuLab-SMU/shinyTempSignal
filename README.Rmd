@@ -15,7 +15,7 @@ owner <- strsplit(URL,"/")[[1]][4]
 gh <- sprintf("%s/%s", owner, pkg)
 cit <- utils::citation(pkg)
 cit_text <- cit$textVersion
-cit_text <- sub("doi: (.*)$", "[\\1](https://doi.org/\\1", cit_text)
+cit_text <- sub("doi: (.*)$", "[\\1](https://doi.org/\\1)", cit_text)
 ```
  
 ## ``r pkg``: `r title`
